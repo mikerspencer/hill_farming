@@ -1,0 +1,97 @@
+---
+title: "Defining hill farming"
+author: "Mike Spencer"
+date: "16 April 2018"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=F, message=F, results=F)
+library(rgdal)
+library(broom)
+library(tidyverse)
+library(viridis)
+library(knitr)
+```
+
+## Introduction
+
+### Purpose
+
+### Output level
+
+Will be agricultural parishes.
+2016 data, downloaded from: <https://data.gov.uk/dataset/939fdd5e-7322-4ab7-9dc9-bbfc538c4477/agricultural-parishes>.
+
+
+```{r agricultural parishes, fig.cap="2016 agricultural parishes"}
+parishes = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/ag_parishes_2016.gpkg"), "simplified_parishes")
+
+par(mar=rep(0.5, times=4))
+plot(parishes)
+par(mar=c(5, 4, 4, 2) + 0.1)
+```
+
+There are `r length(unique(parishes$PARCode))` agricultural parishes in Scotland.
+Why report at ag parish level?
+
+## Urban rural
+
+Agricultural parishes cover the entire land mass of Scotland, so some are predominantly urban areas.
+Downloaded from: <http://www.gov.scot/Publications/2018/03/6040/downloads><http://www.gov.scot/Publications/2018/03/6040/downloads>.
+
+```{r urban/rural map, fig.cap="Scottish Government 8 fold rural-urban classification, higher numbers are more remote."}
+urban_rural = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/"), "SG_UrbanRural_2016")
+
+urban_rural$id = row.names(urban_rural)
+x = tidy(urban_rural) %>% 
+   left_join(urban_rural@data)
+
+ggplot(x, aes(long, lat, fill=UR8FOLD, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   labs(fill="") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
+
+Urban-rural classification does not make a distiction between upland and lowland areas, but a remoteness index of how long it takes to travel (by driving) to the nearest town. Hence, it does not represent the ease or challenge of farming in a given parish. It does, however give an indication of proximity to market.
+
+```{r urban/rural parish count, fig.cap=""}
+proj4string(parishes) = proj4string(urban_rural)
+x = over(parishes, urban_rural, returnList=T)
+
+sapply(x, nrow) %>% 
+   table() %>% 
+   data.frame() %>% 
+   rename(Classes=".", Parishes=Freq) %>% 
+   kable(caption="Number of different 8 fold classifications in each parish")
+```
+
+```{r urban/rural parish plot}
+z = lapply(1:length(x), function(i){
+   x[[i]]$parish = i
+   x[[i]]
+})
+
+z = do.call("rbind.data.frame", z)
+
+FOLD8 = data.frame(UR8FOLD=1:8, Classification=c("Large Urban Areas", "Other Urban Areas", "Accessible small Towns", "Remote Small Towns", "Very Remote Small Towns", "Accessible Rural", "Remote Rural", "Very Remote Rural"))
+
+z %>% 
+   count(UR8FOLD) %>% 
+   inner_join(FOLD8) %>% 
+   select(Classification, Parishes=n) %>% 
+   kable(caption="Number of parishes which are partly or wholy made of each classifiction")
+```
+
+
+## Terrain
+
+```{r elevation}
+
+```
+
