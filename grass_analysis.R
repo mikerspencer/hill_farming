@@ -36,6 +36,6 @@ lapply(f, function(i){
 })
 
 # Export
-lapply(c(f[-1], "terrain"), function(i){
-   system(paste0("v.out.ogr input=", i, "_parishes@hill_farms output=/home/mspencer/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/", i, "_parishes.csv format=CSV"))
+lapply(c(f, "terrain"), function(i){
+   system(paste0("v.out.ogr --overwrite input=", i, "_parishes_clean@hill_farms output=", normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/", i, "_parishes.csv format=CSV"))
 })
