@@ -32,7 +32,7 @@ lapply(f, function(i){
    system(paste0("v.db.addcolumn map=", i, "_parishes@hill_farms columns='", i, "_area DOUBLE PRECISION'"))
    system(paste0("v.to.db map=", i, "_parishes@hill_farms option=area columns=", i, "_area"))
    # Clean weird GRASS output
-   system(paste0("v.extract --overwrite input=", i, "_parishes@hill_farms where='a_", i, "_t_area > ", i, "_area' output=", i, "_parishes_clean@hill_farms"))
+   system(paste0("v.extract --overwrite input=", i, "_parishes@hill_farms where='a_", i, "_t_area >= ", i, "_area' output=", i, "_parishes_clean@hill_farms"))
 })
 
 # Export
