@@ -13,7 +13,7 @@ system("v.rast.stats map=terrain_parish@hill_farms raster=Terrain50_Scotland@hil
 system("v.rast.stats map=terrain_parish@hill_farms raster=Terrain50_slope@hill_farms column_prefix=slope_ method=minimum,maximum,average,median")
 
 # Query vector layers
-f = list.files("/home/mspencer/Cloud/Michael/SRUC/hill_farms/data/spatial", pattern="*.shp$")
+f = list.files(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial"), pattern="*.shp$")
 f = substr(f, 1, nchar(f) - 4)
 
 # Get total area of each vector
