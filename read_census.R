@@ -25,7 +25,7 @@ KS605SC = read_csv("hill_farming/data/KS605SC.csv", skip=4)
 # Which columns are we interested in?
 census_2001 = KS01 %>% 
    inner_join(KS11a) %>% 
-   select(census_id=X1,
+   select(TAG=X1,
           pop_all_2001=`2001 Population: All people`,
           pop_male_2001=`2001 Population: Males`,
           pop_female_2001=`2001 Population: Females`,
@@ -55,7 +55,10 @@ areas_2001 = read_csv("hill_farming/data/OutputAreas2001_parishes.csv") %>%
 
 areas_2001 = areas_2001[!duplicated(areas_2001), ]
 
-
+areas_2001_join = areas_2001 %>% 
+   select(TAG=a_TAG, PARCode=b_PARCode, PARName=b_PARName, OutputAreas2001_area, OutputAreas2001_t_area) %>% 
+   mutate(area_prop=OutputAreas2001_area / OutputAreas2001_t_area) %>% 
+   inner_join(census_2001)
 
 
 areas_2011 = read_csv("hill_farming/data/OutputArea2011_MHW_parishes.csv")
