@@ -44,21 +44,40 @@ census_2011 = KS101SC %>%
           pop_male_2011=Males,
           pop_female_2011=Females,
           pop_working_all_2011=`All people aged 16 to 74 in employment`,
-          pop_working_land_2011=`A. Agriculture, forestry and fishing`)
+          pop_working_land_2011=`A. Agriculture, forestry and fishing`) %>% 
+   mutate(pop_working_all_2011=gsub(",", "", pop_working_all_2011),
+          pop_working_land_2011=gsub(",", "", pop_working_land_2011)) %>% 
+   mutate(pop_working_all_2011=as.numeric(str_replace(pop_working_all_2011, "-", "0")),
+          pop_working_land_2011=as.numeric(str_replace(pop_working_land_2011, "-", "0")))
 
 
 # Get proportion according to parishes
-areas_total_2001 = read_csv("hill_farming/data/OutputAreas2001_temp.csv")
 areas_2001 = read_csv("hill_farming/data/OutputAreas2001_parishes.csv") %>% 
-   select(-cat) %>% 
-   left_join(areas_total_2001, by=c("a_TAG"="TAG"))
+   select(TAG=a_TAG, PARCode=b_PARCode, PARName=b_PARName, OutputAreas2001_area, a_OutputAreas2001_t_area) %>% 
+   mutate(area_prop=OutputAreas2001_area / a_OutputAreas2001_t_area) %>% 
+   left_join(census_2001) %>% 
+   mutate(pop_all_2001=ceiling(pop_all_2001 * area_prop),
+          pop_male_2001=ceiling(pop_male_2001 * area_prop),
+          pop_female_2001=ceiling(pop_female_2001 * area_prop),
+          pop_working_all_2001=ceiling(pop_working_all_2001 * area_prop),
+          pop_working_land_2001=ceiling(pop_working_land_2001 * area_prop)) %>% 
+   select(-OutputAreas2001_area, -a_OutputAreas2001_t_area, -area_prop, -TAG) %>% 
+   group_by(PARCode, PARName) %>% 
+   summarise_all(sum)
 
-areas_2001 = areas_2001[!duplicated(areas_2001), ]
+# Joining to polygons removes Scotland row from census
+areas_2011 = read_csv("hill_farming/data/OutputArea2011_MHW_parishes.csv") %>% 
+   select(census_id=a_code, PARCode=b_PARCode, PARName=b_PARName, OutputArea2011_MHW_area, a_OutputArea2011_MHW_t_area) %>% 
+   mutate(area_prop=OutputArea2011_MHW_area / a_OutputArea2011_MHW_t_area) %>% 
+   left_join(census_2011) %>% 
+   mutate(pop_all_2011=ceiling(pop_all_2011 * area_prop),
+          pop_male_2011=ceiling(pop_male_2011 * area_prop),
+          pop_female_2011=ceiling(pop_female_2011 * area_prop),
+          pop_working_all_2011=ceiling(pop_working_all_2011 * area_prop),
+          pop_working_land_2011=ceiling(pop_working_land_2011 * area_prop)) %>% 
+   select(-OutputArea2011_MHW_area, -a_OutputArea2011_MHW_t_area, -area_prop, -census_id) %>% 
+   group_by(PARCode, PARName) %>% 
+   summarise_all(sum)
 
-areas_2001_join = areas_2001 %>% 
-   select(TAG=a_TAG, PARCode=b_PARCode, PARName=b_PARName, OutputAreas2001_area, OutputAreas2001_t_area) %>% 
-   mutate(area_prop=OutputAreas2001_area / OutputAreas2001_t_area) %>% 
-   inner_join(census_2001)
-
-
-areas_2011 = read_csv("hill_farming/data/OutputArea2011_MHW_parishes.csv")
+pop_census = areas_2001 %>% 
+   inner_join(areas_2011)
