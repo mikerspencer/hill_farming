@@ -6,7 +6,7 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo=F, message=F, results=F)
+knitr::opts_chunk$set(echo=F, message=F)
 library(rgdal)
 library(broom)
 library(tidyverse)
@@ -27,31 +27,60 @@ Will be agricultural parishes.
 ```{r agricultural parishes, fig.cap="2016 agricultural parishes"}
 parishes = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/ag_parishes_2016.gpkg"), "simplified_parishes")
 
-par(mar=rep(0.5, times=4))
-plot(parishes)
-par(mar=c(5, 4, 4, 2) + 0.1)
+parishes$id = row.names(parishes)
+parishes = tidy(parishes) %>% 
+   left_join(parishes@data)
+
+ggplot(parishes, aes(long, lat, group=group)) +
+   geom_polygon(colour="grey20", fill="grey90", size=0.1) +
+   coord_equal() +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
 ```
 
 There are `r length(unique(parishes$PARCode))` agricultural parishes in Scotland.
 Why report at ag parish level?
 
-## Urban rural
+## Defining hill farming
+
+Data were collected from a variety of sources:
+
+* Urban/rural: <http://www.gov.scot/Publications/2018/03/6040/downloads>
+* Elevation: <https://www.ordnancesurvey.co.uk/business-and-government/products/terrain-50.html>
+* SNH LCA Landscape Character Assessment: <https://gateway.snh.gov.uk/natural-spaces/>
+* SNH Wild land: <https://gateway.snh.gov.uk/natural-spaces/>
+* JHI LCA Land capability for agriculture: <http://www.hutton.ac.uk/learning/natural-resource-datasets>
+* JHI LCA Land capability for forestry: <http://www.hutton.ac.uk/learning/natural-resource-datasets>
+* Agricultural census **rough grazing - to do**: RESAS
+
+```{r data load}
+restrictions = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/parish_restrictions.csv")
+
+parishes = parishes %>% 
+   left_join(restrictions, by=c("PARCode"="PARCode", "PARName"="PARName")) %>% 
+   mutate_all(funs(replace(., is.na(.), 0)))
+```
+
+Preparation of these datasets extracted data at an agricultural parish level.
+Exact specification for this process is detailed in:
+
+* `grass_read.R` which reads files into GRASS GIS
+* `grass_analysis.R` clips polygon data to agricultural parishes and measures subsequent polygon sizes. Terrain values (elevation and slope) are also extracted from raster data.
+* `read_hill_class.R` combines data from the GRASS analysis and aggregates to parish levels. Crucially, at a parish level proportion of land is reported as being less viable, i.e. higher proportions mean a parish is more likely to be hill farming.
+
+### Urban rural
 
 Agricultural parishes cover the entire land mass of Scotland, so some are predominantly urban areas.
-Downloaded from: <http://www.gov.scot/Publications/2018/03/6040/downloads><http://www.gov.scot/Publications/2018/03/6040/downloads>.
+Below is a map showing the proportion of each parish which is classified as rural in the two fold urban-rural classification.
 
-```{r urban/rural map, fig.cap="Scottish Government 8 fold rural-urban classification, higher numbers are more remote."}
-urban_rural = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/"), "SG_UrbanRural_2016")
-
-urban_rural$id = row.names(urban_rural)
-x = tidy(urban_rural) %>% 
-   left_join(urban_rural@data)
-
-ggplot(x, aes(long, lat, fill=UR8FOLD, group=group)) +
+```{r urban/rural map}
+ggplot(parishes, aes(long, lat, fill=rural_prop, group=group)) +
    geom_polygon() +
    coord_equal() +
    scale_fill_viridis() +
-   labs(fill="") +
+   labs(fill="Rural\nProportion") +
    theme_minimal() +
    theme(axis.text=element_blank(),
          axis.title=element_blank(),
@@ -60,38 +89,147 @@ ggplot(x, aes(long, lat, fill=UR8FOLD, group=group)) +
 
 Urban-rural classification does not make a distiction between upland and lowland areas, but a remoteness index of how long it takes to travel (by driving) to the nearest town. Hence, it does not represent the ease or challenge of farming in a given parish. It does, however give an indication of proximity to market.
 
-```{r urban/rural parish count, fig.cap=""}
-proj4string(parishes) = proj4string(urban_rural)
-x = over(parishes, urban_rural, returnList=T)
 
-sapply(x, nrow) %>% 
-   table() %>% 
-   data.frame() %>% 
-   rename(Classes=".", Parishes=Freq) %>% 
-   kable(caption="Number of different 8 fold classifications in each parish")
+### Terrain
+
+A digital elevation model was used to get terrain data for each parish.
+These were for elevation and slope and values extracted were minimum, mean, median and maximum.
+
+#### Elevation
+
+```{r elevation, fig.height=10}
+parishes %>% 
+   select(long, lat, order, hole, piece, group,
+          elev__minimum, elev__average, elev__median, elev__maximum) %>% 
+   gather(variable, value, -long, -lat, -order, -hole, -piece, -group) %>% 
+   separate(variable, c("variable", "measure")) %>% 
+   mutate(measure=factor(measure, levels=c("minimum", "average", "median", "maximum"))) %>% 
+   ggplot(aes(long, lat, fill=value, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   facet_wrap(~measure) +
+   labs(fill="Elevation\n(m)") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
 ```
 
-```{r urban/rural parish plot}
-z = lapply(1:length(x), function(i){
-   x[[i]]$parish = i
-   x[[i]]
-})
+#### Slope
 
-z = do.call("rbind.data.frame", z)
+```{r slope, fig.height=10}
+parishes %>% 
+   select(long, lat, order, hole, piece, group,
+          slope__minimum, slope__average, slope__median, slope__maximum) %>% 
+   gather(variable, value, -long, -lat, -order, -hole, -piece, -group) %>% 
+   separate(variable, c("variable", "measure")) %>% 
+   ggplot(aes(long, lat, fill=value, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   facet_wrap(~measure) +
+   labs(fill="Slope\n(degrees)") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
 
-FOLD8 = data.frame(UR8FOLD=1:8, Classification=c("Large Urban Areas", "Other Urban Areas", "Accessible small Towns", "Remote Small Towns", "Very Remote Small Towns", "Accessible Rural", "Remote Rural", "Very Remote Rural"))
+### SNH LCA Landscape Character Assessment
 
-z %>% 
-   count(UR8FOLD) %>% 
-   inner_join(FOLD8) %>% 
-   select(Classification, Parishes=n) %>% 
-   kable(caption="Number of parishes which are partly or wholy made of each classifiction")
+The following have been taken from the SNH landscape character assessment level 3 as hill farming:
+
+```{r SNH lca character}
+data.frame(Potential_hill_farming_areas=c("Flat or Rolling, Smooth or Sweeping, Extensive, High Moorlands of the Highlands and Islands",
+                           "Inland Loch",
+                           "Highland Straths",
+                           "Moorland Transitional Landscapes of the Highlands and Islands",
+                           "High, Massive, Rolling, Rounded Mountains of the Highlands and Islands",
+                           "High Massive Mountain Plateau of the Cairngorms",
+                           "Smooth Upland Moorland Hills",
+                           "Highland Foothills",
+                           "Upland Igneous and Volcanic Hills The Ochil, Sidlaw, Cleish and Lomond Hills",
+                           "High, Massive, Rugged, Steep-Sided Mountains of the Highlands and Islands",
+                           "Sea Lochs of the Highlands and Islands",
+                           "Highland and Island Rocky Coastal Landscapes",
+                           "Peatland Landscapes  of the Highlands and Islands",
+                           "Rocky Moorlands of the Highlands and Islands",
+                           "Rugged, Craggy Upland Hills and Moorlands of the Highlands, including the Trossachs",
+                           "Low Coastal Hills of the Highlands and Islands",
+                           "Coastal Hills Headlands Plateaux and Moorlands",
+                           "Lowland Hills",
+                           "Foothills and Pronounced Hills",
+                           "Upland Hills, The Southern Uplands and Cheviots",
+                           "High Plateau Moorlands",
+                           "Rugged Granite Uplands",
+                           "Rocky Volcanic Islands",
+                           "Rugged Moorland Hills",
+                           "Upland Fringe Moorland",
+                           "Upland Hills, The Lammemuir, Pentland and Moorfoot Hills",
+                           "Rocky Coasts Cliffs and Braes of the Lowlands",
+                           "Knock or Rock and Lochan of the Islands",
+                           "Highland Cnocan"))
 ```
 
 
-## Terrain
-
-```{r elevation}
-
+```{r SNH lca}
+parishes %>% 
+   ggplot(aes(long, lat, fill=landscape_class_prop, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   labs(fill="Upland\nLandscape\nProportion") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
 ```
 
+### SNH Wild land
+
+```{r SNH wild land}
+parishes %>% 
+   ggplot(aes(long, lat, fill=land_cap_forest_prop, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   labs(fill="Wild land\nProportion") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
+
+### JHI LCA Land capability for agriculture
+
+```{r JHI lca}
+parishes %>% 
+   ggplot(aes(long, lat, fill=land_cap_ag_prop, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   labs(fill="Agriculture\n6 & 7 class\nProportion") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
+
+### JHI LCA Land capability for forestry
+
+```{r JHI lcf}
+parishes %>% 
+   ggplot(aes(long, lat, fill=land_cap_forest_prop, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   labs(fill="Forestry\nF6 & F7\nProportion") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
+
+
+## Ranking to create an index of hill farming
