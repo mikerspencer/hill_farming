@@ -17,7 +17,7 @@ Will be agricultural parishes. 2016 data, downloaded from: <https://data.gov.uk/
     ## with 932 features
     ## It has 4 fields
 
-![2016 agricultural parishes](define_hill-farming_files/figure-markdown_github-ascii_identifiers/agricultural%20parishes-1.png)
+![2016 agricultural parishes](define_hill-farming_files/figure-markdown_github-ascii_identifiers/agricultural_parishes-1.png)
 
 There are 886 agricultural parishes in Scotland. Why report at ag parish level?
 
@@ -55,7 +55,7 @@ Preparation of these datasets extracted data at an agricultural parish level. Ex
 
 Agricultural parishes cover the entire land mass of Scotland, so some are predominantly urban areas. Below is a map showing the proportion of each parish which is classified as rural in the two fold urban-rural classification.
 
-![](define_hill-farming_files/figure-markdown_github-ascii_identifiers/urban/rural%20map-1.png)
+![](define_hill-farming_files/figure-markdown_github-ascii_identifiers/urban-rural_map-1.png)
 
 Urban-rural classification does not make a distiction between upland and lowland areas, but a remoteness index of how long it takes to travel (by driving) to the nearest town. Hence, it does not represent the ease or challenge of farming in a given parish. It does, however give an indication of proximity to market.
 
@@ -106,19 +106,19 @@ The following have been taken from the SNH landscape character assessment level 
     ## 28                                                     Knock or Rock and Lochan of the Islands
     ## 29                                                                             Highland Cnocan
 
-![](define_hill-farming_files/figure-markdown_github-ascii_identifiers/SNH%20lca-1.png)
+![](define_hill-farming_files/figure-markdown_github-ascii_identifiers/SNH_lca-1.png)
 
 ### SNH Wild land
 
-![](define_hill-farming_files/figure-markdown_github-ascii_identifiers/SNH%20wild%20land-1.png)
+![](define_hill-farming_files/figure-markdown_github-ascii_identifiers/SNH_wild_land-1.png)
 
 ### JHI LCA Land capability for agriculture
 
-![](define_hill-farming_files/figure-markdown_github-ascii_identifiers/JHI%20lca-1.png)
+![](define_hill-farming_files/figure-markdown_github-ascii_identifiers/JHI_lca-1.png)
 
 ### JHI LCA Land capability for forestry
 
-![](define_hill-farming_files/figure-markdown_github-ascii_identifiers/JHI%20lcf-1.png)
+![](define_hill-farming_files/figure-markdown_github-ascii_identifiers/JHI_lcf-1.png)
 
 Ranking to create an index of hill farming
 ------------------------------------------

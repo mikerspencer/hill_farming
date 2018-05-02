@@ -24,7 +24,7 @@ Will be agricultural parishes.
 2016 data, downloaded from: <https://data.gov.uk/dataset/939fdd5e-7322-4ab7-9dc9-bbfc538c4477/agricultural-parishes>.
 
 
-```{r agricultural parishes, fig.cap="2016 agricultural parishes"}
+```{r agricultural_parishes, fig.cap="2016 agricultural parishes"}
 parishes = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/ag_parishes_2016.gpkg"), "simplified_parishes")
 
 parishes$id = row.names(parishes)
@@ -75,7 +75,7 @@ Exact specification for this process is detailed in:
 Agricultural parishes cover the entire land mass of Scotland, so some are predominantly urban areas.
 Below is a map showing the proportion of each parish which is classified as rural in the two fold urban-rural classification.
 
-```{r urban/rural map}
+```{r urban-rural_map}
 ggplot(parishes, aes(long, lat, fill=rural_prop, group=group)) +
    geom_polygon() +
    coord_equal() +
@@ -140,7 +140,7 @@ parishes %>%
 
 The following have been taken from the SNH landscape character assessment level 3 as hill farming:
 
-```{r SNH lca character}
+```{r SNH_lca_character}
 data.frame(Potential_hill_farming_areas=c("Flat or Rolling, Smooth or Sweeping, Extensive, High Moorlands of the Highlands and Islands",
                            "Inland Loch",
                            "Highland Straths",
@@ -173,7 +173,7 @@ data.frame(Potential_hill_farming_areas=c("Flat or Rolling, Smooth or Sweeping, 
 ```
 
 
-```{r SNH lca}
+```{r SNH_lca}
 parishes %>% 
    ggplot(aes(long, lat, fill=landscape_class_prop, group=group)) +
    geom_polygon() +
@@ -188,7 +188,7 @@ parishes %>%
 
 ### SNH Wild land
 
-```{r SNH wild land}
+```{r SNH_wild_land}
 parishes %>% 
    ggplot(aes(long, lat, fill=land_cap_forest_prop, group=group)) +
    geom_polygon() +
@@ -203,7 +203,7 @@ parishes %>%
 
 ### JHI LCA Land capability for agriculture
 
-```{r JHI lca}
+```{r JHI_lca}
 parishes %>% 
    ggplot(aes(long, lat, fill=land_cap_ag_prop, group=group)) +
    geom_polygon() +
@@ -218,7 +218,7 @@ parishes %>%
 
 ### JHI LCA Land capability for forestry
 
-```{r JHI lcf}
+```{r JHI_lcf}
 parishes %>% 
    ggplot(aes(long, lat, fill=land_cap_forest_prop, group=group)) +
    geom_polygon() +
