@@ -6,12 +6,14 @@
 
 library(tidyverse)
 
+# For all variables higher proportions are worse
 
 # Urban rural
 urban_rural = read_csv("~/hill_farming/data/SG_UrbanRural_2016_parishes.csv") %>% 
-   rename(PARCode=b_PARCode, PARName=b_PARName, UR8FOLD=a_UR8FOLD) %>% 
-   group_by(PARCode, PARName, UR8FOLD) %>% 
-   summarise(urban_rural_prop=sum(SG_UrbanRural_2016_area / b_Shape_Area))
+   rename(PARCode=b_PARCode, PARName=b_PARName, UR2FOLD=a_UR2FOLD) %>% 
+   filter(UR2FOLD==2) %>% 
+   group_by(PARCode, PARName) %>% 
+   summarise(rural_prop=sum(SG_UrbanRural_2016_area / b_Shape_Area))
 
 # Wild land
 wild_land = read_csv("~/hill_farming/data/WILDLAND_SCOTLAND_parishes.csv") %>% 
@@ -23,19 +25,50 @@ wild_land = read_csv("~/hill_farming/data/WILDLAND_SCOTLAND_parishes.csv") %>%
 # to remove urban values mutate(a_lcacode=replace(a_lcacode, which(a_lcacode > 7), NA))
 land_capability_ag = read_csv("~/hill_farming/data/lca_250k_parishes.csv") %>% 
    rename(PARCode=b_PARCode, PARName=b_PARName, lcacode=a_lcacode) %>% 
-   group_by(PARCode, PARName, lcacode) %>% 
+   filter(lcacode>6 & lcacode<10) %>% 
+   group_by(PARCode, PARName) %>% 
    summarise(land_cap_ag_prop=sum(lca_250k_area / b_Shape_Area))
 
 # Land capability forestry
 land_capability_forest = read_csv("~/hill_farming/data/lcf250k_dleas_parishes.csv") %>% 
    rename(PARCode=b_PARCode, PARName=b_PARName, LANDCAP=a_LANDCAP) %>% 
-   group_by(PARCode, PARName, LANDCAP) %>% 
+   filter(LANDCAP=="F6" | LANDCAP=="F7") %>% 
+   group_by(PARCode, PARName) %>% 
    summarise(land_cap_forest_prop=sum(lcf250k_dleas_area / b_Shape_Area))
 
 # SNH land classification
 land_classes = read_csv("~/hill_farming/data/LCA_SCOTLAND_parishes.csv") %>% 
-   rename(PARCode=b_PARCode, PARName=b_PARName, Landscape_class_3=a_LEVEL_3) %>% 
-   group_by(PARCode, PARName, Landscape_class_3) %>% 
+   rename(PARCode=b_PARCode, PARName=b_PARName) %>% 
+   filter(a_LEVEL_3 %in% c("Flat or Rolling, Smooth or Sweeping, Extensive, High Moorlands of the Highlands and Islands",
+                           "Inland Loch",
+                           "Highland Straths",
+                           "Moorland Transitional Landscapes of the Highlands and Islands",
+                           "High, Massive, Rolling, Rounded Mountains of the Highlands and Islands",
+                           "High Massive Mountain Plateau of the Cairngorms",
+                           "Smooth Upland Moorland Hills",
+                           "Highland Foothills",
+                           "Upland Igneous and Volcanic Hills The Ochil, Sidlaw, Cleish and Lomond Hills",
+                           "High, Massive, Rugged, Steep-Sided Mountains of the Highlands and Islands",
+                           "Sea Lochs of the Highlands and Islands",
+                           "Highland and Island Rocky Coastal Landscapes",
+                           "Peatland Landscapes  of the Highlands and Islands",
+                           "Rocky Moorlands of the Highlands and Islands",
+                           "Rugged, Craggy Upland Hills and Moorlands of the Highlands, including the Trossachs",
+                           "Low Coastal Hills of the Highlands and Islands",
+                           "Coastal Hills Headlands Plateaux and Moorlands",
+                           "Lowland Hills",
+                           "Foothills and Pronounced Hills",
+                           "Upland Hills, The Southern Uplands and Cheviots",
+                           "High Plateau Moorlands",
+                           "Rugged Granite Uplands",
+                           "Rocky Volcanic Islands",
+                           "Rugged Moorland Hills",
+                           "Upland Fringe Moorland",
+                           "Upland Hills, The Lammemuir, Pentland and Moorfoot Hills",
+                           "Rocky Coasts Cliffs and Braes of the Lowlands",
+                           "Knock or Rock and Lochan of the Islands",
+                           "Highland Cnocan")) %>% 
+   group_by(PARCode, PARName) %>% 
    summarise(landscape_class_prop=sum(LCA_SCOTLAND_area / b_Shape_Area))
 
 # Terrain
@@ -48,6 +81,7 @@ terrain = read_csv("~/hill_farming/data/terrain_parishes.csv") %>%
 
 # Join them all together
 parish_restrictions = read_csv("hill_farming/data/ag_parishes.csv") %>% 
+   distinct() %>% 
    left_join(terrain) %>% 
    left_join(land_classes) %>% 
    left_join(land_capability_ag) %>% 
