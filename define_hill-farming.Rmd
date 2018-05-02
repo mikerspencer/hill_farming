@@ -2,7 +2,7 @@
 title: "Defining hill farming"
 author: "Mike Spencer"
 date: "16 April 2018"
-output: github_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -116,6 +116,15 @@ parishes %>%
          line=element_blank())
 ```
 
+How do different elevation measures relate to each other?
+
+```{r elevation_pairs, fig.height=8, fig.width=8}
+restrictions %>% 
+   select(elev__minimum, elev__average, elev__median, elev__maximum) %>% 
+   pairs()
+```
+
+
 #### Slope
 
 ```{r slope, fig.height=10}
@@ -135,6 +144,15 @@ parishes %>%
          axis.title=element_blank(),
          line=element_blank())
 ```
+
+How do different slope measures relate to each other?
+
+```{r slope_pairs, fig.height=8, fig.width=8}
+restrictions %>% 
+   select(slope__minimum, slope__average, slope__median, slope__maximum) %>% 
+   pairs()
+```
+
 
 ### SNH LCA Landscape Character Assessment
 
@@ -233,3 +251,12 @@ parishes %>%
 
 
 ## Ranking to create an index of hill farming
+
+How related are proportions?
+
+```{r proportion_pairs, fig.height=10, fig.width=10}
+restrictions %>% 
+   select(elev__median, slope__median, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop) %>% 
+   pairs()
+```
+
