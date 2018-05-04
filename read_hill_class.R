@@ -71,6 +71,39 @@ land_classes = read_csv("~/hill_farming/data/LCA_SCOTLAND_parishes.csv") %>%
    group_by(PARCode, PARName) %>% 
    summarise(landscape_class_prop=sum(LCA_SCOTLAND_area / b_Shape_Area))
 
+# National nature reserves
+NNR = read_csv("~/hill_farming/data/NNR_SCOTLAND_parishes.csv") %>% 
+   rename(PARCode=b_PARCode, PARName=b_PARName) %>% 
+   group_by(PARCode, PARName) %>% 
+   summarise(NNR_prop=sum(NNR_SCOTLAND_area / b_Shape_Area))
+
+# Peat/carbon map
+Peat = read_csv("~/hill_farming/data/PEAT_SCOTLAND_parishes.csv") %>% 
+   rename(PARCode=b_PARCode, PARName=b_PARName) %>% 
+   filter(a_PRIMARY_LA %in% c("Blanket bog/peat. veg.", "Water", "Montane veg.", "Cliffs", "Dubh lochans", "Undiff. heather moor", "Other peat", "Wet heather moor", "Dry heather moor", "Quarries", "Wetlands", "Dune lands", "Bings (area)", "Smooth grass/rushes", "Undiff. Nardus/Molinia", "Snow cover", "Industrial peat", "Ski tows", "Rhododendron")) %>% 
+   group_by(PARCode, PARName) %>% 
+   summarise(peat_prop=sum(PEAT_SCOTLAND_area / b_Shape_Area))
+
+# Special area of conservation
+SAC = read_csv("~/hill_farming/data/SAC_SCOTLAND_parishes.csv") %>% 
+   rename(PARCode=b_PARCode, PARName=b_PARName) %>% 
+   group_by(PARCode, PARName) %>% 
+   summarise(SAC_prop=sum(SAC_SCOTLAND_area / b_Shape_Area))
+# Some parishes exceed 1, likely due to overlapping polygons
+
+# Special protection area
+SPA = read_csv("~/hill_farming/data/SPA_SCOTLAND_parishes.csv") %>% 
+   rename(PARCode=b_PARCode, PARName=b_PARName) %>% 
+   group_by(PARCode, PARName) %>% 
+   summarise(SPA_prop=sum(SPA_SCOTLAND_area / b_Shape_Area))
+
+# SSSI
+SSSI = read_csv("~/hill_farming/data/SSSI_SCOTLAND_parishes.csv") %>% 
+   rename(PARCode=b_PARCode, PARName=b_PARName) %>% 
+   group_by(PARCode, PARName) %>% 
+   summarise(SSSI_prop=sum(SSSI_SCOTLAND_area / b_Shape_Area))
+# Some parishes exceed 1, likely due to overlapping polygons
+
 # Terrain
 terrain = read_csv("~/hill_farming/data/terrain_parishes.csv") %>% 
    select(-cat, -Shape_Leng, -Shape_Area) %>% 
@@ -87,4 +120,8 @@ parish_restrictions = read_csv("hill_farming/data/ag_parishes.csv") %>%
    left_join(land_capability_ag) %>% 
    left_join(land_capability_forest) %>% 
    left_join(wild_land) %>% 
-   left_join(urban_rural)
+   left_join(urban_rural) %>% 
+   left_join(NNR) %>% 
+   left_join(Peat) %>% 
+   left_join(SPA) %>% 
+   write_csv("hill_farming/parish_restrictions.csv")
