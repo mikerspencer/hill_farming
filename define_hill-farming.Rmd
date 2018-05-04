@@ -56,7 +56,8 @@ Data were collected from a variety of sources:
 * Agricultural census **rough grazing - to do**: RESAS
 
 ```{r data load}
-restrictions = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/parish_restrictions.csv")
+restrictions = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/parish_restrictions.csv") %>% 
+   mutate_all(funs(replace(., is.na(.), 0)))
 
 parishes = parishes %>% 
    left_join(restrictions, by=c("PARCode"="PARCode", "PARName"="PARName")) %>% 
@@ -219,6 +220,51 @@ parishes %>%
          line=element_blank())
 ```
 
+#### Protected areas
+
+```{r SNH_NNR}
+parishes %>% 
+   ggplot(aes(long, lat, fill=NNR_prop, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   labs(fill="NNR\nProportion") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
+
+```{r SNH_peat_areas}
+data.frame(potential_peat_areas=c("Blanket bog/peat. veg.", "Water", "Montane veg.", "Cliffs", "Dubh lochans", "Undiff. heather moor", "Other peat", "Wet heather moor", "Dry heather moor", "Quarries", "Wetlands", "Dune lands", "Bings (area)", "Smooth grass/rushes", "Undiff. Nardus/Molinia", "Snow cover", "Industrial peat", "Ski tows", "Rhododendron"))
+```
+
+```{r SNH_peat}
+parishes %>% 
+   ggplot(aes(long, lat, fill=peat_prop, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   labs(fill="Peat\nProportion") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
+
+```{r SNH_SPA}
+parishes %>% 
+   ggplot(aes(long, lat, fill=SPA_prop, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   labs(fill="SPA\nProportion") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
+
 ### JHI LCA Land capability for agriculture
 
 ```{r JHI_lca}
@@ -250,7 +296,7 @@ parishes %>%
 ```
 
 
-## Ranking to create an index of hill farming
+## Group parishes into similar levels
 
 How related are proportions?
 
@@ -260,3 +306,42 @@ restrictions %>%
    pairs()
 ```
 
+### Build k-means model
+
+```{r build}
+x = restrictions[, -c(2:5, 7:9)]
+
+# Standardise values
+x[, 2:11] = scale(x[, 2:11])
+
+# Determine number of clusters
+wss = (nrow(x) -1) * sum(apply(x, 2, var))
+for (i in 2:10){
+   wss[i] = sum(kmeans(x, centers=i)$withinss)
+}
+
+plot(1:10, wss, type="b", main="Required number of clusters", xlab="Number of Clusters", ylab="Within groups sum of squares")
+```
+
+```{r run}
+fit = kmeans(x, 2) # 2 cluster solution
+
+# append cluster assignment
+restrictions = data.frame(restrictions, cluster=fit$cluster)
+```
+
+```{r map}
+parishes = parishes %>% 
+   left_join(select(restrictions, PARCode, cluster))
+
+parishes %>% 
+   ggplot(aes(long, lat, fill=cluster, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   labs(fill="Hill or not") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
