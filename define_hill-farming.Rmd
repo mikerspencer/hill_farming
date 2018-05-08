@@ -2,7 +2,7 @@
 title: "Defining hill farming"
 author: "Mike Spencer"
 date: "16 April 2018"
-output: html_document
+output: word_document
 ---
 
 ```{r setup, include=FALSE}
@@ -98,25 +98,6 @@ These were for elevation and slope and values extracted were minimum, mean, medi
 
 #### Elevation
 
-```{r elevation, fig.height=10}
-parishes %>% 
-   select(long, lat, order, hole, piece, group,
-          elev__minimum, elev__average, elev__median, elev__maximum) %>% 
-   gather(variable, value, -long, -lat, -order, -hole, -piece, -group) %>% 
-   separate(variable, c("variable", "measure")) %>% 
-   mutate(measure=factor(measure, levels=c("minimum", "average", "median", "maximum"))) %>% 
-   ggplot(aes(long, lat, fill=value, group=group)) +
-   geom_polygon() +
-   coord_equal() +
-   scale_fill_viridis() +
-   facet_wrap(~measure) +
-   labs(fill="Elevation\n(m)") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
-```
-
 How do different elevation measures relate to each other?
 
 ```{r elevation_pairs, fig.height=8, fig.width=8}
@@ -125,26 +106,24 @@ restrictions %>%
    pairs()
 ```
 
+Mean (average), median and maximum elevation appear to be closely related, but there is variability between each of these and minimum elevation. This is likely due to in-cell elevation variation, e.g. some cells will have a range from 0 to 1000 m, but others a small range.
 
-#### Slope
+Median parish elevation has been chosen as a single measure of parish elevation.
 
-```{r slope, fig.height=10}
-parishes %>% 
-   select(long, lat, order, hole, piece, group,
-          slope__minimum, slope__average, slope__median, slope__maximum) %>% 
-   gather(variable, value, -long, -lat, -order, -hole, -piece, -group) %>% 
-   separate(variable, c("variable", "measure")) %>% 
-   ggplot(aes(long, lat, fill=value, group=group)) +
+```{r elevation}
+ggplot(parishes, aes(long, lat, fill=elev__median, group=group)) +
    geom_polygon() +
    coord_equal() +
    scale_fill_viridis() +
-   facet_wrap(~measure) +
-   labs(fill="Slope\n(degrees)") +
+   labs(fill="Elevation\n median (m)") +
    theme_minimal() +
    theme(axis.text=element_blank(),
          axis.title=element_blank(),
          line=element_blank())
 ```
+
+
+#### Slope
 
 How do different slope measures relate to each other?
 
@@ -152,6 +131,22 @@ How do different slope measures relate to each other?
 restrictions %>% 
    select(slope__minimum, slope__average, slope__median, slope__maximum) %>% 
    pairs()
+```
+
+As with elevation, the average (mean and median) slope measures correlate well. There is greater variability when compared to maximum slopes, but the largest variation is when comparing these to minimum slopes.
+
+A median slope has been used as a single parish slope indicator.
+
+```{r slope, fig.height=10}
+ggplot(parishes, aes(long, lat, fill=slope__median, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   labs(fill="Slope median\n(degrees)") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
 ```
 
 
