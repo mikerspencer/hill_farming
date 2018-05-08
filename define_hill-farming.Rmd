@@ -310,6 +310,13 @@ parishes %>%
          line=element_blank())
 ```
 
+### Common grazing
+
+```{r common_grazing}
+
+```
+
+
 
 ## Group parishes into similar levels
 
@@ -317,17 +324,18 @@ How related are proportions?
 
 ```{r proportion_pairs, fig.height=10, fig.width=10}
 restrictions %>% 
-   select(elev__median, slope__median, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop) %>% 
+   select(elev__median, slope__median, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, peat_prop, NNR_prop) %>% 
    pairs()
 ```
 
 ### Build k-means model
 
 ```{r build}
-x = restrictions[, -c(2:5, 7:9)]
+x = restrictions %>% 
+   select(elev__median, slope__median, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, NNR_prop, peat_prop)
 
 # Standardise values
-x[, 2:11] = scale(x[, 2:11])
+x = scale(x)
 
 # Determine number of clusters
 wss = (nrow(x) -1) * sum(apply(x, 2, var))
@@ -350,13 +358,18 @@ parishes = parishes %>%
    left_join(select(restrictions, PARCode, cluster))
 
 parishes %>% 
-   ggplot(aes(long, lat, fill=cluster, group=group)) +
+   ggplot(aes(long, lat, fill=as.character(cluster), group=group)) +
    geom_polygon() +
    coord_equal() +
-   scale_fill_viridis() +
+   scale_fill_brewer(palette="Dark2") +
    labs(fill="Hill or not") +
    theme_minimal() +
    theme(axis.text=element_blank(),
          axis.title=element_blank(),
          line=element_blank())
 ```
+
+
+## Rank/score each parish in terms of hilliness
+
+Create a score, which can then be ranked.
