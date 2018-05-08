@@ -155,7 +155,11 @@ ggplot(parishes, aes(long, lat, fill=slope__median, group=group)) +
 The following have been taken from the SNH landscape character assessment level 3 as hill farming:
 
 ```{r SNH_lca_character}
-data.frame(Potential_hill_farming_areas=c("Flat or Rolling, Smooth or Sweeping, Extensive, High Moorlands of the Highlands and Islands",
+x = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/LCA_SCOTLAND_parishes.csv") %>% 
+   select(a_LEVEL_3) %>% 
+   distinct()
+
+y = c("Flat or Rolling, Smooth or Sweeping, Extensive, High Moorlands of the Highlands and Islands",
                            "Inland Loch",
                            "Highland Straths",
                            "Moorland Transitional Landscapes of the Highlands and Islands",
@@ -183,7 +187,13 @@ data.frame(Potential_hill_farming_areas=c("Flat or Rolling, Smooth or Sweeping, 
                            "Upland Hills, The Lammemuir, Pentland and Moorfoot Hills",
                            "Rocky Coasts Cliffs and Braes of the Lowlands",
                            "Knock or Rock and Lochan of the Islands",
-                           "Highland Cnocan"))
+                           "Highland Cnocan")
+
+data.frame(hill_farming=y) %>% 
+   kable()
+
+data.frame(not_hill_farming=x$a_LEVEL_3[!x$a_LEVEL_3 %in% y]) %>%
+   kable()
 ```
 
 
@@ -231,7 +241,17 @@ parishes %>%
 ```
 
 ```{r SNH_peat_areas}
-data.frame(potential_peat_areas=c("Blanket bog/peat. veg.", "Water", "Montane veg.", "Cliffs", "Dubh lochans", "Undiff. heather moor", "Other peat", "Wet heather moor", "Dry heather moor", "Quarries", "Wetlands", "Dune lands", "Bings (area)", "Smooth grass/rushes", "Undiff. Nardus/Molinia", "Snow cover", "Industrial peat", "Ski tows", "Rhododendron"))
+x = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/PEAT_SCOTLAND_parishes.csv") %>% 
+   select(a_PRIMARY_LA) %>% 
+   distinct()
+
+y=c("Blanket bog/peat. veg.", "Water", "Montane veg.", "Cliffs", "Dubh lochans", "Undiff. heather moor", "Other peat", "Wet heather moor", "Dry heather moor", "Quarries", "Wetlands", "Dune lands", "Bings (area)", "Smooth grass/rushes", "Undiff. Nardus/Molinia", "Snow cover", "Industrial peat", "Ski tows", "Rhododendron")
+
+data.frame(peat_areas=y) %>% 
+   kable()
+
+data.frame(not_peat_areas=x$a_PRIMARY_LA[!x$a_PRIMARY_LA %in% y]) %>%
+   kable()
 ```
 
 ```{r SNH_peat}
