@@ -214,7 +214,7 @@ parishes %>%
 
 ```{r SNH_wild_land}
 parishes %>% 
-   ggplot(aes(long, lat, fill=land_cap_forest_prop, group=group)) +
+   ggplot(aes(long, lat, fill=wildland_prop, group=group)) +
    geom_polygon() +
    coord_equal() +
    scale_fill_viridis() +
