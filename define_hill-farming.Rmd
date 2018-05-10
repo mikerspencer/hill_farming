@@ -313,7 +313,27 @@ parishes %>%
 ### Common grazing
 
 ```{r common_grazing}
+cg = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/common_grazing.csv") %>% 
+   select(-Name)
 
+parishes = parishes %>% 
+   left_join(cg) %>% 
+   mutate(common_grazing=replace(common_grazing, is.na(common_grazing), 0))
+
+restrictions = restrictions %>% 
+   left_join(cg) %>% 
+   mutate(common_grazing=replace(common_grazing, is.na(common_grazing), 0))
+
+parishes %>% 
+   ggplot(aes(long, lat, fill=common_grazing, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   labs(fill="Common\nGrazing\nProportion") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
 ```
 
 
@@ -373,3 +393,8 @@ parishes %>%
 ## Rank/score each parish in terms of hilliness
 
 Create a score, which can then be ranked.
+
+```{r score}
+
+```
+
