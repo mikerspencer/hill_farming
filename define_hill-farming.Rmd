@@ -395,6 +395,29 @@ parishes %>%
 Create a score, which can then be ranked.
 
 ```{r score}
+score = restrictions %>% 
+   select(-PARName,
+          -elev__minimum, -elev__average, -elev__maximum,
+          -slope__minimum, -slope__average, -slope__maximum,
+          -SPA_prop, -common_grazing) %>% 
+   mutate(elev__median=elev__median/max(elev__median),
+          slope__median=slope__median/max(slope__median)) %>% 
+   gather(variable, value, -PARCode) %>% 
+   group_by(PARCode) %>% 
+   summarise(score=sum(value))
 
+parishes = parishes %>% 
+   left_join(score)
+
+parishes %>% 
+   ggplot(aes(long, lat, fill=score, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis(option="magma") +
+   labs(fill="Hill\nscore") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
 ```
 
