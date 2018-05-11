@@ -75,7 +75,7 @@ dev.off()
 x = data.frame(cols=colnames(restrictions)[c(6, 10:17)],
                names=c("Elevation", "Slope", "SNH\nLandscape",
                        "JHI\nagri\ncapability", "JHI\nforest\ncapability",
-                       "SNH\nwildland", "Rural-urban", "NNR", "SNH peat"), stringsAsFactors=F)
+                       "SNH\nwildland", "Rural-urban", "SNH\nNational\nNature\nReserves", "SNH peat"), stringsAsFactors=F)
 
 lapply(1:nrow(x), function(i){
    pdf(paste0("~/Cloud/Michael/SRUC/hill_farms/poster/images/", x[i, 1], ".pdf"), width=5)
