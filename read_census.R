@@ -8,18 +8,18 @@ library(tidyverse)
 
 # 2001
 # population
-KS01 = read_csv("hill_farming/data/KS01.csv", skip=4)
+KS01 = read_csv("projects/hill_farming/data/KS01.csv", skip=4)
 # age
-KS02 = read_csv("hill_farming/data/KS02.csv", skip=5)
+KS02 = read_csv("projects/hill_farming/data/KS02.csv", skip=5)
 # employment
-KS11a = read_csv("hill_farming/data/KS11a.csv", skip=5)
+KS11a = read_csv("projects/hill_farming/data/KS11a.csv", skip=5)
 
 # 2011
 # population
-KS101SC = read_csv("hill_farming/data/KS101SC.csv", skip=4)
-KS102SC = read_csv("hill_farming/data/KS101SC.csv", skip=4)
+KS101SC = read_csv("projects/hill_farming/data/KS101SC.csv", skip=4)
+KS102SC = read_csv("projects/hill_farming/data/KS101SC.csv", skip=4)
 
-KS605SC = read_csv("hill_farming/data/KS605SC.csv", skip=4)
+KS605SC = read_csv("projects/hill_farming/data/KS605SC.csv", skip=4)
 
 
 # Which columns are we interested in?
@@ -52,7 +52,7 @@ census_2011 = KS101SC %>%
 
 
 # Get proportion according to parishes
-areas_2001 = read_csv("hill_farming/data/OutputAreas2001_parishes.csv") %>% 
+areas_2001 = read_csv("projects/hill_farming/data/OutputAreas2001_parishes.csv") %>% 
    select(TAG=a_TAG, PARCode=b_PARCode, PARName=b_PARName, OutputAreas2001_area, a_OutputAreas2001_t_area) %>% 
    mutate(area_prop=OutputAreas2001_area / a_OutputAreas2001_t_area) %>% 
    left_join(census_2001) %>% 
@@ -66,7 +66,7 @@ areas_2001 = read_csv("hill_farming/data/OutputAreas2001_parishes.csv") %>%
    summarise_all(sum)
 
 # Joining to polygons removes Scotland row from census
-areas_2011 = read_csv("hill_farming/data/OutputArea2011_MHW_parishes.csv") %>% 
+areas_2011 = read_csv("projects/hill_farming/data/OutputArea2011_MHW_parishes.csv") %>% 
    select(census_id=a_code, PARCode=b_PARCode, PARName=b_PARName, OutputArea2011_MHW_area, a_OutputArea2011_MHW_t_area) %>% 
    mutate(area_prop=OutputArea2011_MHW_area / a_OutputArea2011_MHW_t_area) %>% 
    left_join(census_2011) %>% 
@@ -81,3 +81,5 @@ areas_2011 = read_csv("hill_farming/data/OutputArea2011_MHW_parishes.csv") %>%
 
 pop_census = areas_2001 %>% 
    inner_join(areas_2011)
+
+write_csv(pop_census, "projects/hill_farming/pop_census.csv")
