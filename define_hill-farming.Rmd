@@ -2,7 +2,7 @@
 title: "Defining hill farming"
 author: "Mike Spencer"
 date: "16 April 2018"
-output: html_document
+output: word_document
 ---
 
 ```{r setup, include=FALSE}
@@ -56,7 +56,8 @@ Data were collected from a variety of sources:
 * Agricultural census **rough grazing - to do**: RESAS
 
 ```{r data load}
-restrictions = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/parish_restrictions.csv")
+restrictions = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/parish_restrictions.csv") %>% 
+   mutate_all(funs(replace(., is.na(.), 0)))
 
 parishes = parishes %>% 
    left_join(restrictions, by=c("PARCode"="PARCode", "PARName"="PARName")) %>% 
@@ -97,25 +98,6 @@ These were for elevation and slope and values extracted were minimum, mean, medi
 
 #### Elevation
 
-```{r elevation, fig.height=10}
-parishes %>% 
-   select(long, lat, order, hole, piece, group,
-          elev__minimum, elev__average, elev__median, elev__maximum) %>% 
-   gather(variable, value, -long, -lat, -order, -hole, -piece, -group) %>% 
-   separate(variable, c("variable", "measure")) %>% 
-   mutate(measure=factor(measure, levels=c("minimum", "average", "median", "maximum"))) %>% 
-   ggplot(aes(long, lat, fill=value, group=group)) +
-   geom_polygon() +
-   coord_equal() +
-   scale_fill_viridis() +
-   facet_wrap(~measure) +
-   labs(fill="Elevation\n(m)") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
-```
-
 How do different elevation measures relate to each other?
 
 ```{r elevation_pairs, fig.height=8, fig.width=8}
@@ -124,26 +106,24 @@ restrictions %>%
    pairs()
 ```
 
+Mean (average), median and maximum elevation appear to be closely related, but there is variability between each of these and minimum elevation. This is likely due to in-cell elevation variation, e.g. some cells will have a range from 0 to 1000 m, but others a small range.
 
-#### Slope
+Median parish elevation has been chosen as a single measure of parish elevation.
 
-```{r slope, fig.height=10}
-parishes %>% 
-   select(long, lat, order, hole, piece, group,
-          slope__minimum, slope__average, slope__median, slope__maximum) %>% 
-   gather(variable, value, -long, -lat, -order, -hole, -piece, -group) %>% 
-   separate(variable, c("variable", "measure")) %>% 
-   ggplot(aes(long, lat, fill=value, group=group)) +
+```{r elevation}
+ggplot(parishes, aes(long, lat, fill=elev__median, group=group)) +
    geom_polygon() +
    coord_equal() +
    scale_fill_viridis() +
-   facet_wrap(~measure) +
-   labs(fill="Slope\n(degrees)") +
+   labs(fill="Elevation\n median (m)") +
    theme_minimal() +
    theme(axis.text=element_blank(),
          axis.title=element_blank(),
          line=element_blank())
 ```
+
+
+#### Slope
 
 How do different slope measures relate to each other?
 
@@ -153,13 +133,33 @@ restrictions %>%
    pairs()
 ```
 
+As with elevation, the average (mean and median) slope measures correlate well. There is greater variability when compared to maximum slopes, but the largest variation is when comparing these to minimum slopes.
+
+A median slope has been used as a single parish slope indicator.
+
+```{r slope, fig.height=10}
+ggplot(parishes, aes(long, lat, fill=slope__median, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   labs(fill="Slope median\n(degrees)") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
+
 
 ### SNH LCA Landscape Character Assessment
 
 The following have been taken from the SNH landscape character assessment level 3 as hill farming:
 
 ```{r SNH_lca_character}
-data.frame(Potential_hill_farming_areas=c("Flat or Rolling, Smooth or Sweeping, Extensive, High Moorlands of the Highlands and Islands",
+x = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/LCA_SCOTLAND_parishes.csv") %>% 
+   select(a_LEVEL_3) %>% 
+   distinct()
+
+y = c("Flat or Rolling, Smooth or Sweeping, Extensive, High Moorlands of the Highlands and Islands",
                            "Inland Loch",
                            "Highland Straths",
                            "Moorland Transitional Landscapes of the Highlands and Islands",
@@ -187,7 +187,13 @@ data.frame(Potential_hill_farming_areas=c("Flat or Rolling, Smooth or Sweeping, 
                            "Upland Hills, The Lammemuir, Pentland and Moorfoot Hills",
                            "Rocky Coasts Cliffs and Braes of the Lowlands",
                            "Knock or Rock and Lochan of the Islands",
-                           "Highland Cnocan"))
+                           "Highland Cnocan")
+
+data.frame(hill_farming=y) %>% 
+   kable()
+
+data.frame(not_hill_farming=x$a_LEVEL_3[!x$a_LEVEL_3 %in% y]) %>%
+   kable()
 ```
 
 
@@ -208,11 +214,66 @@ parishes %>%
 
 ```{r SNH_wild_land}
 parishes %>% 
-   ggplot(aes(long, lat, fill=land_cap_forest_prop, group=group)) +
+   ggplot(aes(long, lat, fill=wildland_prop, group=group)) +
    geom_polygon() +
    coord_equal() +
    scale_fill_viridis() +
    labs(fill="Wild land\nProportion") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
+
+#### Protected areas
+
+```{r SNH_NNR}
+parishes %>% 
+   ggplot(aes(long, lat, fill=NNR_prop, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   labs(fill="NNR\nProportion") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
+
+```{r SNH_peat_areas}
+x = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/PEAT_SCOTLAND_parishes.csv") %>% 
+   select(a_PRIMARY_LA) %>% 
+   distinct()
+
+y=c("Blanket bog/peat. veg.", "Water", "Montane veg.", "Cliffs", "Dubh lochans", "Undiff. heather moor", "Other peat", "Wet heather moor", "Dry heather moor", "Quarries", "Wetlands", "Dune lands", "Bings (area)", "Smooth grass/rushes", "Undiff. Nardus/Molinia", "Snow cover", "Industrial peat", "Ski tows", "Rhododendron")
+
+data.frame(peat_areas=y) %>% 
+   kable()
+
+data.frame(not_peat_areas=x$a_PRIMARY_LA[!x$a_PRIMARY_LA %in% y]) %>%
+   kable()
+```
+
+```{r SNH_peat}
+parishes %>% 
+   ggplot(aes(long, lat, fill=peat_prop, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   labs(fill="Peat\nProportion") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
+
+```{r SNH_SPA}
+parishes %>% 
+   ggplot(aes(long, lat, fill=SPA_prop, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   labs(fill="SPA\nProportion") +
    theme_minimal() +
    theme(axis.text=element_blank(),
          axis.title=element_blank(),
@@ -249,14 +310,114 @@ parishes %>%
          line=element_blank())
 ```
 
+### Common grazing
 
-## Ranking to create an index of hill farming
+```{r common_grazing}
+cg = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/common_grazing.csv") %>% 
+   select(-Name)
+
+parishes = parishes %>% 
+   left_join(cg) %>% 
+   mutate(common_grazing=replace(common_grazing, is.na(common_grazing), 0))
+
+restrictions = restrictions %>% 
+   left_join(cg) %>% 
+   mutate(common_grazing=replace(common_grazing, is.na(common_grazing), 0))
+
+parishes %>% 
+   ggplot(aes(long, lat, fill=common_grazing, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis() +
+   labs(fill="Common\nGrazing\nProportion") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
+
+
+
+## Group parishes into similar levels
 
 How related are proportions?
 
 ```{r proportion_pairs, fig.height=10, fig.width=10}
 restrictions %>% 
-   select(elev__median, slope__median, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop) %>% 
+   select(elev__median, slope__median, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, peat_prop, NNR_prop) %>% 
    pairs()
+```
+
+### Build k-means model
+
+```{r build}
+x = restrictions %>% 
+   select(elev__median, slope__median, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, NNR_prop, peat_prop)
+
+# Standardise values
+x = scale(x)
+
+# Determine number of clusters
+wss = (nrow(x) -1) * sum(apply(x, 2, var))
+for (i in 2:10){
+   wss[i] = sum(kmeans(x, centers=i)$withinss)
+}
+
+plot(1:10, wss, type="b", main="Required number of clusters", xlab="Number of Clusters", ylab="Within groups sum of squares")
+```
+
+```{r run}
+fit = kmeans(x, 2) # 2 cluster solution
+
+# append cluster assignment
+restrictions = data.frame(restrictions, cluster=fit$cluster)
+```
+
+```{r map}
+parishes = parishes %>% 
+   left_join(select(restrictions, PARCode, cluster))
+
+parishes %>% 
+   ggplot(aes(long, lat, fill=as.character(cluster), group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_brewer(palette="Dark2") +
+   labs(fill="Hill or not") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
+
+
+## Rank/score each parish in terms of hilliness
+
+Create a score, which can then be ranked.
+
+```{r score}
+score = restrictions %>% 
+   select(-PARName,
+          -elev__minimum, -elev__average, -elev__maximum,
+          -slope__minimum, -slope__average, -slope__maximum,
+          -SPA_prop, -common_grazing) %>% 
+   mutate(elev__median=elev__median/max(elev__median),
+          slope__median=slope__median/max(slope__median)) %>% 
+   gather(variable, value, -PARCode) %>% 
+   group_by(PARCode) %>% 
+   summarise(score=sum(value))
+
+parishes = parishes %>% 
+   left_join(score)
+
+parishes %>% 
+   ggplot(aes(long, lat, fill=score, group=group)) +
+   geom_polygon() +
+   coord_equal() +
+   scale_fill_viridis(option="magma") +
+   labs(fill="Hill\nscore") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
 ```
 
