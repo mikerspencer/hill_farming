@@ -2,7 +2,7 @@
 title: "Defining hill farming"
 author: "Mike Spencer"
 date: "16 April 2018"
-output: word_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -32,7 +32,7 @@ parishes = tidy(parishes) %>%
    left_join(parishes@data)
 
 ggplot(parishes, aes(long, lat, group=group)) +
-   geom_polygon(colour="grey20", fill="grey90", size=0.1) +
+   geom_polygon(colour="grey30", fill="grey90", size=0.1) +
    coord_equal() +
    theme_minimal() +
    theme(axis.text=element_blank(),
@@ -78,7 +78,8 @@ Below is a map showing the proportion of each parish which is classified as rura
 
 ```{r urban-rural_map}
 ggplot(parishes, aes(long, lat, fill=rural_prop, group=group)) +
-   geom_polygon() +
+   geom_polygon(size=0.1,
+                colour="grey30") +
    coord_equal() +
    scale_fill_viridis() +
    labs(fill="Rural\nProportion") +
@@ -112,7 +113,8 @@ Median parish elevation has been chosen as a single measure of parish elevation.
 
 ```{r elevation}
 ggplot(parishes, aes(long, lat, fill=elev__median, group=group)) +
-   geom_polygon() +
+   geom_polygon(size=0.1,
+                colour="grey30") +
    coord_equal() +
    scale_fill_viridis() +
    labs(fill="Elevation\n median (m)") +
@@ -139,10 +141,27 @@ A median slope has been used as a single parish slope indicator.
 
 ```{r slope, fig.height=10}
 ggplot(parishes, aes(long, lat, fill=slope__median, group=group)) +
-   geom_polygon() +
+   geom_polygon(size=0.1,
+                colour="grey30") +
    coord_equal() +
    scale_fill_viridis() +
    labs(fill="Slope median\n(degrees)") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
+
+
+### Common grazing
+
+```{r common_grazing}
+ggplot(parishes, aes(long, lat, fill=grazing_prop, group=group)) +
+   geom_polygon(size=0.1,
+                colour="grey30") +
+   coord_equal() +
+   scale_fill_distiller(palette="Greens", direction=1) +
+   labs(fill="Common\ngrazing\nproportion") +
    theme_minimal() +
    theme(axis.text=element_blank(),
          axis.title=element_blank(),
@@ -200,7 +219,8 @@ data.frame(not_hill_farming=x$a_LEVEL_3[!x$a_LEVEL_3 %in% y]) %>%
 ```{r SNH_lca}
 parishes %>% 
    ggplot(aes(long, lat, fill=landscape_class_prop, group=group)) +
-   geom_polygon() +
+   geom_polygon(size=0.1,
+                colour="grey30") +
    coord_equal() +
    scale_fill_viridis() +
    labs(fill="Upland\nLandscape\nProportion") +
@@ -215,7 +235,8 @@ parishes %>%
 ```{r SNH_wild_land}
 parishes %>% 
    ggplot(aes(long, lat, fill=wildland_prop, group=group)) +
-   geom_polygon() +
+   geom_polygon(size=0.1,
+                colour="grey30") +
    coord_equal() +
    scale_fill_viridis() +
    labs(fill="Wild land\nProportion") +
@@ -230,7 +251,8 @@ parishes %>%
 ```{r SNH_NNR}
 parishes %>% 
    ggplot(aes(long, lat, fill=NNR_prop, group=group)) +
-   geom_polygon() +
+   geom_polygon(size=0.1,
+                colour="grey30") +
    coord_equal() +
    scale_fill_viridis() +
    labs(fill="NNR\nProportion") +
@@ -257,7 +279,8 @@ data.frame(not_peat_areas=x$a_PRIMARY_LA[!x$a_PRIMARY_LA %in% y]) %>%
 ```{r SNH_peat}
 parishes %>% 
    ggplot(aes(long, lat, fill=peat_prop, group=group)) +
-   geom_polygon() +
+   geom_polygon(size=0.1,
+                colour="grey30") +
    coord_equal() +
    scale_fill_viridis() +
    labs(fill="Peat\nProportion") +
@@ -270,7 +293,8 @@ parishes %>%
 ```{r SNH_SPA}
 parishes %>% 
    ggplot(aes(long, lat, fill=SPA_prop, group=group)) +
-   geom_polygon() +
+   geom_polygon(size=0.1,
+                colour="grey30") +
    coord_equal() +
    scale_fill_viridis() +
    labs(fill="SPA\nProportion") +
@@ -285,7 +309,8 @@ parishes %>%
 ```{r JHI_lca}
 parishes %>% 
    ggplot(aes(long, lat, fill=land_cap_ag_prop, group=group)) +
-   geom_polygon() +
+   geom_polygon(size=0.1,
+                colour="grey30") +
    coord_equal() +
    scale_fill_viridis() +
    labs(fill="Agriculture\n6 & 7 class\nProportion") +
@@ -300,36 +325,11 @@ parishes %>%
 ```{r JHI_lcf}
 parishes %>% 
    ggplot(aes(long, lat, fill=land_cap_forest_prop, group=group)) +
-   geom_polygon() +
+   geom_polygon(size=0.1,
+                colour="grey30") +
    coord_equal() +
    scale_fill_viridis() +
    labs(fill="Forestry\nF6 & F7\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
-```
-
-### Common grazing
-
-```{r common_grazing}
-cg = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/common_grazing.csv") %>% 
-   select(-Name)
-
-parishes = parishes %>% 
-   left_join(cg) %>% 
-   mutate(common_grazing=replace(common_grazing, is.na(common_grazing), 0))
-
-restrictions = restrictions %>% 
-   left_join(cg) %>% 
-   mutate(common_grazing=replace(common_grazing, is.na(common_grazing), 0))
-
-parishes %>% 
-   ggplot(aes(long, lat, fill=common_grazing, group=group)) +
-   geom_polygon() +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Common\nGrazing\nProportion") +
    theme_minimal() +
    theme(axis.text=element_blank(),
          axis.title=element_blank(),
@@ -379,7 +379,8 @@ parishes = parishes %>%
 
 parishes %>% 
    ggplot(aes(long, lat, fill=as.character(cluster), group=group)) +
-   geom_polygon() +
+   geom_polygon(size=0.1,
+                colour="grey30") +
    coord_equal() +
    scale_fill_brewer(palette="Dark2") +
    labs(fill="Hill or not") +
