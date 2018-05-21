@@ -27,12 +27,15 @@ Will be agricultural parishes.
 ```{r agricultural_parishes, fig.cap="2016 agricultural parishes"}
 parishes = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/ag_parishes_2016.gpkg"), "simplified_parishes")
 
+Scotland = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/ag_parishes_2016.gpkg"), "Scotland") %>% 
+   tidy()
+
 parishes$id = row.names(parishes)
 parishes = tidy(parishes) %>% 
    left_join(parishes@data)
 
 ggplot(parishes, aes(long, lat, group=group)) +
-   geom_polygon(colour="grey30", fill="grey90", size=0.1) +
+   geom_polygon(colour="grey30", fill="grey90", size=0.05) +
    coord_equal() +
    theme_minimal() +
    theme(axis.text=element_blank(),
@@ -71,22 +74,30 @@ Exact specification for this process is detailed in:
 * `grass_analysis.R` clips polygon data to agricultural parishes and measures subsequent polygon sizes. Terrain values (elevation and slope) are also extracted from raster data.
 * `read_hill_class.R` combines data from the GRASS analysis and aggregates to parish levels. Crucially, at a parish level proportion of land is reported as being less viable, i.e. higher proportions mean a parish is more likely to be hill farming.
 
+```{r map function}
+plot.map = function(i, tit){
+   ggplot(parishes, aes(long, lat, group=group)) +
+      geom_polygon(aes_string(fill=i)) +
+      geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+      coord_equal() +
+      scale_fill_distiller(palette="Greens", direction=1) +
+      labs(fill=tit) +
+      theme_minimal() +
+      theme(axis.text=element_blank(),
+            axis.title=element_blank(),
+            line=element_blank())
+}
+```
+
+
 ### Urban rural
 
 Agricultural parishes cover the entire land mass of Scotland, so some are predominantly urban areas.
 Below is a map showing the proportion of each parish which is classified as rural in the two fold urban-rural classification.
 
 ```{r urban-rural_map}
-ggplot(parishes, aes(long, lat, fill=rural_prop, group=group)) +
-   geom_polygon(size=0.1,
-                colour="grey30") +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Rural\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("rural_prop", "Rural\nProportion")
 ```
 
 Urban-rural classification does not make a distiction between upland and lowland areas, but a remoteness index of how long it takes to travel (by driving) to the nearest town. Hence, it does not represent the ease or challenge of farming in a given parish. It does, however give an indication of proximity to market.
@@ -112,16 +123,7 @@ Mean (average), median and maximum elevation appear to be closely related, but t
 Median parish elevation has been chosen as a single measure of parish elevation.
 
 ```{r elevation}
-ggplot(parishes, aes(long, lat, fill=elev__median, group=group)) +
-   geom_polygon(size=0.1,
-                colour="grey30") +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Elevation\n median (m)") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("elev__median", "Elevation\n median (m)")
 ```
 
 
@@ -140,32 +142,14 @@ As with elevation, the average (mean and median) slope measures correlate well. 
 A median slope has been used as a single parish slope indicator.
 
 ```{r slope}
-ggplot(parishes, aes(long, lat, fill=slope__median, group=group)) +
-   geom_polygon(size=0.1,
-                colour="grey30") +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Slope median\n(degrees)") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("slope__median", "Slope median\n(degrees)")
 ```
 
 
 ### Common grazing
 
 ```{r common_grazing}
-ggplot(parishes, aes(long, lat, fill=grazing_prop, group=group)) +
-   geom_polygon(size=0.1,
-                colour="grey30") +
-   coord_equal() +
-   scale_fill_distiller(palette="Greens", direction=1) +
-   labs(fill="Common\ngrazing\nproportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("grazing_prop", "Common\ngrazing\nproportion")
 ```
 
 
@@ -217,49 +201,19 @@ data.frame(not_hill_farming=x$a_LEVEL_3[!x$a_LEVEL_3 %in% y]) %>%
 
 
 ```{r SNH_lca}
-parishes %>% 
-   ggplot(aes(long, lat, fill=landscape_class_prop, group=group)) +
-   geom_polygon(size=0.1,
-                colour="grey30") +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Upland\nLandscape\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("landscape_class_prop", "Upland\nLandscape\nProportion")
 ```
 
 ### SNH Wild land
 
 ```{r SNH_wild_land}
-parishes %>% 
-   ggplot(aes(long, lat, fill=wildland_prop, group=group)) +
-   geom_polygon(size=0.1,
-                colour="grey30") +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Wild land\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("wildland_prop", "Wild land\nProportion")
 ```
 
 #### Protected areas
 
 ```{r SNH_NNR}
-parishes %>% 
-   ggplot(aes(long, lat, fill=NNR_prop, group=group)) +
-   geom_polygon(size=0.1,
-                colour="grey30") +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="NNR\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("NNR_prop", "NNR\nProportion")
 ```
 
 ```{r SNH_peat_areas}
@@ -277,65 +231,24 @@ data.frame(not_peat_areas=x$a_PRIMARY_LA[!x$a_PRIMARY_LA %in% y]) %>%
 ```
 
 ```{r SNH_peat}
-parishes %>% 
-   ggplot(aes(long, lat, fill=peat_prop, group=group)) +
-   geom_polygon(size=0.1,
-                colour="grey30") +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Peat\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("peat_prop", "Peat\nProportion")
 ```
 
 ```{r SNH_SPA}
-parishes %>% 
-   ggplot(aes(long, lat, fill=SPA_prop, group=group)) +
-   geom_polygon(size=0.1,
-                colour="grey30") +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="SPA\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("SPA_prop", "SPA\nProportion")
 ```
 
 ### JHI LCA Land capability for agriculture
 
 ```{r JHI_lca}
-parishes %>% 
-   ggplot(aes(long, lat, fill=land_cap_ag_prop, group=group)) +
-   geom_polygon(size=0.1,
-                colour="grey30") +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Agriculture\n6 & 7 class\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("land_cap_ag_prop", "Agriculture\n6 & 7 class\nProportion")
 ```
 
 ### JHI LCA Land capability for forestry
 
 ```{r JHI_lcf}
-parishes %>% 
-   ggplot(aes(long, lat, fill=land_cap_forest_prop, group=group)) +
-   geom_polygon(size=0.1,
-                colour="grey30") +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Forestry\nF6 & F7\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("land_cap_forest_prop", "Forestry\nF6 & F7\nProportion")
 ```
-
 
 
 ## Group parishes into similar levels
@@ -350,7 +263,7 @@ restrictions %>%
 
 ### Build k-means model
 
-```{r build}
+```{r kmean build}
 x = restrictions %>% 
    select(elev__median, slope__median, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, NNR_prop, peat_prop)
 
@@ -366,36 +279,24 @@ for (i in 2:10){
 plot(1:10, wss, type="b", main="Required number of clusters", xlab="Number of Clusters", ylab="Within groups sum of squares")
 ```
 
-```{r run}
+```{r kmean run}
 set.seed(224)
 
 fit2 = kmeans(x, 2) # 2 cluster solution
-fit6 = kmeans(x, 6) # 6 cluster solution
 
 # append cluster assignment
-restrictions = data.frame(restrictions, cluster2=fit2$cluster, cluster6=fit6$cluster)
+restrictions = data.frame(restrictions, cluster2=fit2$cluster)
 ```
 
-```{r map}
+```{r kmean_map}
 parishes = parishes %>% 
-   left_join(select(restrictions, PARCode, cluster2, cluster4))
+   left_join(select(restrictions, PARCode, cluster2))
 
 parishes %>% 
-   ggplot(aes(long, lat, fill=as.character(cluster2), group=group)) +
-   geom_polygon(size=0.1,
-                colour="grey30") +
-   coord_equal() +
-   scale_fill_brewer(palette="Dark2") +
-   labs(fill="Hill or not") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
-
-parishes %>% 
-   ggplot(aes(long, lat, fill=as.character(cluster6), group=group)) +
-   geom_polygon(size=0.1,
-                colour="grey30") +
+   ggplot(aes(long, lat, group=group)) +
+   geom_polygon(aes(fill=as.character(cluster2))) +
+   geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
    coord_equal() +
    scale_fill_brewer(palette="Dark2") +
    labs(fill="Hill or not") +
