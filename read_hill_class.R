@@ -112,7 +112,12 @@ terrain = read_csv("~/projects/hill_farming/data/terrain_parishes.csv") %>%
    summarise_all(mean)
 
 # Common grazing
-grazing = read_csv("~/projects/hill_farming/data/common_grazing.csv")
+# Note there is likely an issue with the reported area of common grazing as 1 parish is greater than 100 %.
+grazing = read_csv("~/projects/hill_farming/data/common_grazing.csv") %>% 
+   left_join(read_csv("~/projects/hill_farming/data/LCA_SCOTLAND_parishes.csv"), by=c("PARCode"="b_PARCode")) %>% 
+   group_by(PARCode) %>% 
+   summarise(grazing_prop=unique(common_grazing * 10000) / unique(b_Shape_Area)) %>% 
+   mutate(grazing_prop=replace(grazing_prop, grazing_prop>1, 1))
 
 
 # Join them all together
