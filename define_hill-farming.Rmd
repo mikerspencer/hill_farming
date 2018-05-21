@@ -344,7 +344,7 @@ How related are proportions?
 
 ```{r proportion_pairs, fig.height=10, fig.width=10}
 restrictions %>% 
-   select(elev__median, slope__median, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, peat_prop, NNR_prop) %>% 
+   select(elev__median, slope__median, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, peat_prop, NNR_prop) %>% 
    pairs()
 ```
 
@@ -352,7 +352,7 @@ restrictions %>%
 
 ```{r build}
 x = restrictions %>% 
-   select(elev__median, slope__median, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, NNR_prop, peat_prop)
+   select(elev__median, slope__median, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, NNR_prop, peat_prop)
 
 # Standardise values
 x = scale(x)
@@ -367,18 +367,33 @@ plot(1:10, wss, type="b", main="Required number of clusters", xlab="Number of Cl
 ```
 
 ```{r run}
-fit = kmeans(x, 2) # 2 cluster solution
+set.seed(224)
+
+fit2 = kmeans(x, 2) # 2 cluster solution
+fit6 = kmeans(x, 6) # 6 cluster solution
 
 # append cluster assignment
-restrictions = data.frame(restrictions, cluster=fit$cluster)
+restrictions = data.frame(restrictions, cluster2=fit2$cluster, cluster6=fit6$cluster)
 ```
 
 ```{r map}
 parishes = parishes %>% 
-   left_join(select(restrictions, PARCode, cluster))
+   left_join(select(restrictions, PARCode, cluster2, cluster4))
 
 parishes %>% 
-   ggplot(aes(long, lat, fill=as.character(cluster), group=group)) +
+   ggplot(aes(long, lat, fill=as.character(cluster2), group=group)) +
+   geom_polygon(size=0.1,
+                colour="grey30") +
+   coord_equal() +
+   scale_fill_brewer(palette="Dark2") +
+   labs(fill="Hill or not") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+
+parishes %>% 
+   ggplot(aes(long, lat, fill=as.character(cluster6), group=group)) +
    geom_polygon(size=0.1,
                 colour="grey30") +
    coord_equal() +
@@ -400,7 +415,7 @@ score = restrictions %>%
    select(-PARName,
           -elev__minimum, -elev__average, -elev__maximum,
           -slope__minimum, -slope__average, -slope__maximum,
-          -SPA_prop, -common_grazing) %>% 
+          -SPA_prop) %>% 
    mutate(elev__median=elev__median/max(elev__median),
           slope__median=slope__median/max(slope__median)) %>% 
    gather(variable, value, -PARCode) %>% 
