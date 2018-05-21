@@ -139,7 +139,7 @@ As with elevation, the average (mean and median) slope measures correlate well. 
 
 A median slope has been used as a single parish slope indicator.
 
-```{r slope, fig.height=10}
+```{r slope}
 ggplot(parishes, aes(long, lat, fill=slope__median, group=group)) +
    geom_polygon(size=0.1,
                 colour="grey30") +
