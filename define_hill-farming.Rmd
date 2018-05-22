@@ -114,6 +114,61 @@ panel.cor = function(x, y, digits = 2, prefix = "", cex.cor, ...){
 ```
 
 
+### Terrain
+
+The Ordnance Survey Terrain 50 digital elevation model was used to get terrain data for each parish.
+This gridded model has a 50 m cell resolution and each cell is attributed an average height of land contained within it.
+This elevation model was used to calculate slope, also on a 50 m grid.
+For the slope and elevation datasets summary values were extracted for each agricultural parish; these values were minimum, mean, median and maximum.
+
+#### Elevation
+
+The four measures of elevation were compared in order to select a single indicator.
+These comparisons are shown below, with the numeric values being Pearson correlation coefficients.
+
+```{r elevation_pairs, fig.height=8, fig.width=8}
+restrictions %>% 
+   select(elev__minimum, elev__average, elev__median, elev__maximum) %>% 
+   pairs(col=rgb(0, 75/255, 35/255, 0.25),
+         upper.panel=panel.cor,
+         main="Elevation measure comparisions")
+```
+
+Mean (average), median and maximum elevation are closely correlated, but there is variability between each of these and minimum elevation.
+This is due to within-parish elevation variation, e.g. some parishes will have a range from sea level to mountain top, but other parishes a occupy more level terrain.
+The elevation range within a parish could have been used, but this would largely duplicate slope, i.e. a big elevation range within a parish should produce a steeper slope.
+
+Mean parish elevation has been chosen as a single measure of parish elevation.
+This because it is a central measure which captures the variation of the minimum, median and maximum best (correlations of 0.77, 0.99 and 0.94 respectively).
+
+```{r elevation}
+plot.map("elev__average", "Elevation\n mean (m)")
+```
+
+
+#### Slope
+
+As for elevation, slope measures were compared to each other (below).
+This plot matrix shows scatter plots between the measures in the lower left and Pearson's correlations in the upper right.
+
+```{r slope_pairs, fig.height=8, fig.width=8}
+restrictions %>% 
+   select(slope__minimum, slope__average, slope__median, slope__maximum) %>% 
+   pairs(col=rgb(0, 75/255, 35/255, 0.25),
+         upper.panel=panel.cor,
+         main="Slope measure comparisions")
+```
+
+As with elevation, the average (mean and median) slope measures correlate well.
+There is greater variability when compared to maximum slopes, but the largest variation is when comparing to minimum slopes.
+
+A mean (average) slope has been used as a single parish slope indicator because it has the best correlation with median or maximum slope (0.98 and 0.71 respectively).
+
+```{r slope}
+plot.map("slope__average", "Slope median\n(degrees)")
+```
+
+
 ### Urban rural
 
 Agricultural parishes cover the entire land mass of Scotland, so some are predominantly urban areas.
@@ -124,53 +179,6 @@ plot.map("rural_prop", "Rural\nProportion")
 ```
 
 Urban-rural classification does not make a distiction between upland and lowland areas, but a remoteness index of how long it takes to travel (by driving) to the nearest town. Hence, it does not represent the ease or challenge of farming in a given parish. It does, however give an indication of proximity to market.
-
-
-### Terrain
-
-A digital elevation model was used to get terrain data for each parish.
-These were for elevation and slope and values extracted were minimum, mean, median and maximum.
-
-#### Elevation
-
-How do different elevation measures relate to each other?
-
-```{r elevation_pairs, fig.height=8, fig.width=8}
-restrictions %>% 
-   select(elev__minimum, elev__average, elev__median, elev__maximum) %>% 
-   pairs(col=rgb(0, 75/255, 35/255, 0.25),
-         upper.panel=panel.cor,
-         main="Elevation measure comparisions")
-```
-
-Mean (average), median and maximum elevation appear to be closely related, but there is variability between each of these and minimum elevation. This is likely due to in-cell elevation variation, e.g. some cells will have a range from 0 to 1000 m, but others a small range.
-
-Median parish elevation has been chosen as a single measure of parish elevation.
-
-```{r elevation}
-plot.map("elev__median", "Elevation\n median (m)")
-```
-
-
-#### Slope
-
-How do different slope measures relate to each other?
-
-```{r slope_pairs, fig.height=8, fig.width=8}
-restrictions %>% 
-   select(slope__minimum, slope__average, slope__median, slope__maximum) %>% 
-   pairs(col=rgb(0, 75/255, 35/255, 0.25),
-         upper.panel=panel.cor,
-         main="Slope measure comparisions")
-```
-
-As with elevation, the average (mean and median) slope measures correlate well. There is greater variability when compared to maximum slopes, but the largest variation is when comparing these to minimum slopes.
-
-A median slope has been used as a single parish slope indicator.
-
-```{r slope}
-plot.map("slope__median", "Slope median\n(degrees)")
-```
 
 
 ### Common grazing
@@ -283,7 +291,7 @@ How related are proportions?
 
 ```{r proportion_pairs, fig.height=10, fig.width=10}
 restrictions %>% 
-   select(elev__median, slope__median, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, peat_prop, NNR_prop) %>% 
+   select(elev__average, slope__average, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, peat_prop, NNR_prop) %>% 
    pairs(col=rgb(0, 75/255, 35/255, 0.25),
          upper.panel=panel.cor,
          main="Hilliness indicator comparisons")
@@ -293,7 +301,7 @@ restrictions %>%
 
 ```{r kmean build}
 x = restrictions %>% 
-   select(elev__median, slope__median, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, NNR_prop, peat_prop)
+   select(elev__average, slope__average, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, NNR_prop, peat_prop)
 
 # Standardise values
 x = scale(x)
@@ -342,11 +350,11 @@ Create a score, which can then be ranked.
 ```{r score}
 score = restrictions %>% 
    select(-PARName,
-          -elev__minimum, -elev__average, -elev__maximum,
-          -slope__minimum, -slope__average, -slope__maximum,
+          -elev__minimum, -elev__median, -elev__maximum,
+          -slope__minimum, -slope__median, -slope__maximum,
           -SPA_prop) %>% 
-   mutate(elev__median=elev__median/max(elev__median),
-          slope__median=slope__median/max(slope__median)) %>% 
+   mutate(elev__average=elev__average/max(elev__average),
+          slope__average=slope__average/max(slope__average)) %>% 
    gather(variable, value, -PARCode) %>% 
    group_by(PARCode) %>% 
    summarise(score=sum(value))
