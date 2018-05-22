@@ -14,15 +14,17 @@ library(viridis)
 library(knitr)
 ```
 
+
 ## Introduction
 
 ### Purpose
 
+This document is part of a project evaluating the importance of hill farming in Scottish communities. There is no existing classification of hill farming in Scotland, therefore an index of hill farming needed to be created to evalute its contribution. We chose to do this at an agricultural parish level using datasets describing landscape.
+
 ### Output level
 
-Will be agricultural parishes.
-2016 data, downloaded from: <https://data.gov.uk/dataset/939fdd5e-7322-4ab7-9dc9-bbfc538c4477/agricultural-parishes>.
-
+Results will be aggregated to agricultural parishes, as this administrative level is widely understood and is appropriate for anonymising data.
+The 2016 agricultural parish data were downloaded from: <https://data.gov.uk/dataset/939fdd5e-7322-4ab7-9dc9-bbfc538c4477/agricultural-parishes>.
 
 ```{r agricultural_parishes, fig.cap="2016 agricultural parishes"}
 parishes = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/ag_parishes_2016.gpkg"), "simplified_parishes")
@@ -43,20 +45,26 @@ ggplot(parishes, aes(long, lat, group=group)) +
          line=element_blank())
 ```
 
-There are `r length(unique(parishes$PARCode))` agricultural parishes in Scotland.
-Why report at ag parish level?
+The above map shows the `r length(unique(parishes$PARCode))` agricultural parishes in Scotland.
+These vary in size between `r min(parishes$Shape_Area)/1e+06` and `r max(parishes$Shape_Area)/1e+06` km².
 
 ## Defining hill farming
 
-Data were collected from a variety of sources:
+A simple view of hill farming is of an activity which takes place in hills, but how are hills defined?
+Measuring hilliness by elevation would diminish the challenges of farming smaller hill areas like the Pentlands and Campsies, because they are a third of the height of the biggest mountains in Scotland.
+Incorporating slope into a measure of hill farming would help overcome using only elevation as a measure of hilliness because slopes can be steep without hills needing to be high.
 
-* Urban/rural: <http://www.gov.scot/Publications/2018/03/6040/downloads>
-* Elevation: <https://www.ordnancesurvey.co.uk/business-and-government/products/terrain-50.html>
-* SNH LCA Landscape Character Assessment: <https://gateway.snh.gov.uk/natural-spaces/>
-* SNH Wild land: <https://gateway.snh.gov.uk/natural-spaces/>
-* JHI LCA Land capability for agriculture: <http://www.hutton.ac.uk/learning/natural-resource-datasets>
-* JHI LCA Land capability for forestry: <http://www.hutton.ac.uk/learning/natural-resource-datasets>
-* Agricultural census **rough grazing - to do**: RESAS
+There are many datasets available which we can use to further form an idea of hill farming areas. We have collected data from a variety of sources to help define hill farming:
+
+* Urban/rural classification: <http://www.gov.scot/Publications/2018/03/6040/downloads>
+* Elevation (including derived slope): <https://www.ordnancesurvey.co.uk/business-and-government/products/terrain-50.html>
+* Scottish Natural Heritage (SNH) Landscape Character Assessment (LCA): <https://gateway.snh.gov.uk/natural-spaces/>
+* SNH Wildland: <https://gateway.snh.gov.uk/natural-spaces/>
+* SNH National Nature Reserves (NNR): <https://gateway.snh.gov.uk/natural-spaces/>
+* SNH Carbon and Peatland map: <https://gateway.snh.gov.uk/natural-spaces/>
+* James Hutton Institute (JHI) Land capability for agriculture: <http://www.hutton.ac.uk/learning/natural-resource-datasets>
+* JHI Land capability for forestry: <http://www.hutton.ac.uk/learning/natural-resource-datasets>
+* Agricultural census common grazing: RESAS
 
 ```{r data load}
 restrictions = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/parish_restrictions.csv") %>% 
@@ -67,14 +75,19 @@ parishes = parishes %>%
    mutate_all(funs(replace(., is.na(.), 0)))
 ```
 
-Preparation of these datasets extracted data at an agricultural parish level.
+### Definition method
+
+Data described in the previous section were available in a range of formats, including raster (grid), vector (polygons) and plain text.
+In order to assess all these data at an agricultural parish level, these data were aggregated and converted to a common format.
+Following this process data were converted to a proportion of hilliness in each parish, e.g. for rural urban classification the proportion of each parish classified as rural was calculated.
+
 Exact specification for this process is detailed in:
 
 * `grass_read.R` which reads files into GRASS GIS
 * `grass_analysis.R` clips polygon data to agricultural parishes and measures subsequent polygon sizes. Terrain values (elevation and slope) are also extracted from raster data.
 * `read_hill_class.R` combines data from the GRASS analysis and aggregates to parish levels. Crucially, at a parish level proportion of land is reported as being less viable, i.e. higher proportions mean a parish is more likely to be hill farming.
 
-```{r map function}
+```{r functions}
 plot.map = function(i, tit){
    ggplot(parishes, aes(long, lat, group=group)) +
       geom_polygon(aes_string(fill=i)) +
@@ -87,6 +100,16 @@ plot.map = function(i, tit){
       theme(axis.text=element_blank(),
             axis.title=element_blank(),
             line=element_blank())
+}
+
+panel.cor = function(x, y, digits = 2, prefix = "", cex.cor, ...){
+    usr = par("usr"); on.exit(par(usr))
+    par(usr=c(0, 1, 0, 1))
+    r = cor(x, y)
+    txt = format(c(r, 0.123456789), digits = digits)[1]
+    txt = paste0(prefix, txt)
+    if(missing(cex.cor)) cex.cor = 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = cex.cor * r)
 }
 ```
 
@@ -115,7 +138,9 @@ How do different elevation measures relate to each other?
 ```{r elevation_pairs, fig.height=8, fig.width=8}
 restrictions %>% 
    select(elev__minimum, elev__average, elev__median, elev__maximum) %>% 
-   pairs()
+   pairs(col=rgb(0, 75/255, 35/255, 0.25),
+         upper.panel=panel.cor,
+         main="Elevation measure comparisions")
 ```
 
 Mean (average), median and maximum elevation appear to be closely related, but there is variability between each of these and minimum elevation. This is likely due to in-cell elevation variation, e.g. some cells will have a range from 0 to 1000 m, but others a small range.
@@ -134,7 +159,9 @@ How do different slope measures relate to each other?
 ```{r slope_pairs, fig.height=8, fig.width=8}
 restrictions %>% 
    select(slope__minimum, slope__average, slope__median, slope__maximum) %>% 
-   pairs()
+   pairs(col=rgb(0, 75/255, 35/255, 0.25),
+         upper.panel=panel.cor,
+         main="Slope measure comparisions")
 ```
 
 As with elevation, the average (mean and median) slope measures correlate well. There is greater variability when compared to maximum slopes, but the largest variation is when comparing these to minimum slopes.
@@ -147,6 +174,9 @@ plot.map("slope__median", "Slope median\n(degrees)")
 
 
 ### Common grazing
+
+The common grazing data were supplied by RESAS at a parish level in a csv format, so needed no format conversion or aggregation preparation.
+Common grazing data were sent with units of Hectares per parish.
 
 ```{r common_grazing}
 plot.map("grazing_prop", "Common\ngrazing\nproportion")
@@ -234,10 +264,6 @@ data.frame(not_peat_areas=x$a_PRIMARY_LA[!x$a_PRIMARY_LA %in% y]) %>%
 plot.map("peat_prop", "Peat\nProportion")
 ```
 
-```{r SNH_SPA}
-plot.map("SPA_prop", "SPA\nProportion")
-```
-
 ### JHI LCA Land capability for agriculture
 
 ```{r JHI_lca}
@@ -258,7 +284,9 @@ How related are proportions?
 ```{r proportion_pairs, fig.height=10, fig.width=10}
 restrictions %>% 
    select(elev__median, slope__median, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, peat_prop, NNR_prop) %>% 
-   pairs()
+   pairs(col=rgb(0, 75/255, 35/255, 0.25),
+         upper.panel=panel.cor,
+         main="Hilliness indicator comparisons")
 ```
 
 ### Build k-means model
