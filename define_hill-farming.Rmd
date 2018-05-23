@@ -343,67 +343,18 @@ plot.map("land_cap_forest_prop", "Forestry\nF6 & F7\nProportion")
 ```
 
 
-## Group parishes into similar levels
+## Score and rank for the hilliness of each parish
 
-How related are proportions?
+The previous section describes a range of indices which can indicate hill farming areas.
+We have combined to produce a single index of hill farming areas.
 
-```{r proportion_pairs, fig.height=10, fig.width=10}
-restrictions %>% 
-   select(elev__average, slope__average, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, peat_prop, NNR_prop) %>% 
-   pairs(col=rgb(0, 75/255, 35/255, 0.25),
-         upper.panel=panel.cor,
-         main="Hilliness indicator comparisons")
-```
+The majority of the indicies have maximum values of one, because they show proportions.
+However, elevation and slope have maximum values above one.
+To create an unweighted index slope and elevation have been normalised by dividing values by their series maximums.
+These individual indicies were then summed for each parish to create a single index of hill farming for Scotland.
 
-### Build k-means model
-
-```{r kmean build}
-x = restrictions %>% 
-   select(elev__average, slope__average, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, NNR_prop, peat_prop)
-
-# Standardise values
-x = scale(x)
-
-# Determine number of clusters
-wss = (nrow(x) -1) * sum(apply(x, 2, var))
-for (i in 2:10){
-   wss[i] = sum(kmeans(x, centers=i)$withinss)
-}
-
-plot(1:10, wss, type="b", main="Required number of clusters", xlab="Number of Clusters", ylab="Within groups sum of squares")
-```
-
-```{r kmean run}
-set.seed(224)
-
-fit2 = kmeans(x, 2) # 2 cluster solution
-
-# append cluster assignment
-restrictions = data.frame(restrictions, cluster2=fit2$cluster)
-```
-
-```{r kmean_map}
-parishes = parishes %>% 
-   left_join(select(restrictions, PARCode, cluster2))
-
-parishes %>% 
-   ggplot(aes(long, lat, group=group)) +
-   geom_polygon(aes(fill=as.character(cluster2))) +
-   geom_polygon(data=Scotland, aes(long, lat, group=group),
-                   colour="grey30", fill=NA, size=0.1) +
-   coord_equal() +
-   scale_fill_brewer(palette="Dark2") +
-   labs(fill="Hill or not") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
-```
-
-
-## Rank/score each parish in terms of hilliness
-
-Create a score, which can then be ranked.
+The results of this summation can be seen in the map below.
+The Cairngorms score highest, with areas in the central and western Highlands, North West Scotland and the Outer Hebridies also scoring highly.
 
 ```{r score}
 score = restrictions %>% 
@@ -432,3 +383,126 @@ parishes %>%
          line=element_blank())
 ```
 
+The index of hill farming was ranked to show relative positions of each parish.
+These results are below:
+
+```{r rank}
+x = score %>% 
+   mutate(rank=rank(desc(score))) %>% 
+   select(-score)
+
+parishes = parishes %>% 
+   left_join(x)
+
+ggplot(parishes, aes(long, lat, group=group)) +
+      geom_polygon(aes(fill=rank)) +
+      geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+      coord_equal() +
+      scale_fill_distiller(palette="Greens", direction=-1) +
+      labs(fill="Hilliness\nrank") +
+      theme_minimal() +
+      theme(axis.text=element_blank(),
+            axis.title=element_blank(),
+            line=element_blank())
+```
+
+The top 15 ranked parishes are:
+
+```{r rank 20}
+score %>% 
+   left_join(select(restrictions, PARCode, PARName)) %>% 
+   top_n(15, wt=score) %>% 
+   select(PARName)
+```
+
+
+## Group parishes into similar levels
+
+We can use the individual indicies to group similar parishes together.
+First, we can inspect the relationships between indicies in the plot matrix below.
+Numbers in the upper right panels are Pearson correlations.
+
+```{r proportion_pairs, fig.height=10, fig.width=10}
+restrictions %>% 
+   select(elev__average, slope__average, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, peat_prop, NNR_prop) %>% 
+   pairs(col=rgb(0, 75/255, 35/255, 0.25),
+         upper.panel=panel.cor,
+         main="Hilliness indicator comparisons")
+```
+
+The most well correlated variables are the JHI land capability indicies and the SNH Peat and Carbon map.
+These indicies use JHI soil data, so relationships are expected.
+
+We can use a k-means model to group similar parishes together.
+K-means works by looking for common averages to cluster data points around.
+The following sections detail this work.
+
+### Build k-means model
+
+A k-means model was built using standarised elev__average, slope__average, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, NNR_prop and peat_prop variables.
+The optimum number of cluster were determined using the elbow method, where we try to minimise the total intra-cluster variation.
+In this case, the below plot indicates two clusters may be appropriate, however these data are a little messy.
+
+```{r kmean build}
+x = restrictions %>% 
+   select(elev__average, slope__average, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, NNR_prop, peat_prop)
+
+# Standardise values
+x = scale(x)
+
+# Determine number of clusters
+wss = (nrow(x) -1) * sum(apply(x, 2, var))
+for (i in 2:10){
+   wss[i] = sum(kmeans(x, centers=i)$withinss)
+}
+
+plot(1:10, wss, type="b", main="Required number of clusters", xlab="Number of Clusters", ylab="Within groups sum of squares")
+```
+
+```{r kmean run}
+set.seed(224)
+
+fit2 = kmeans(x, 2) # 2 cluster solution
+
+# append cluster assignment
+restrictions = data.frame(restrictions, cluster2=fit2$cluster)
+```
+
+These two clusters can then be mapped to our parishes as two levels: hill farming areas and not hill farming areas (below).
+As we expect, these are largely similar to the hill farming index, but partitioned into two groups.
+
+```{r kmean_map}
+parishes = parishes %>% 
+   left_join(select(restrictions, PARCode, cluster2))
+
+parishes %>% 
+   ggplot(aes(long, lat, group=group)) +
+   geom_polygon(aes(fill=as.character(cluster2))) +
+   geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+   coord_equal() +
+   scale_fill_brewer(palette="Dark2") +
+   labs(fill="Hill or not") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
+
+We can see the difference in hill farming index against the two cluster groups below:
+
+```{r cluster index}
+parishes %>% 
+   group_by(PARCode) %>% 
+   summarise(score=unique(score),
+             cluster=unique(cluster2)) %>% 
+   ggplot(aes(as.factor(cluster), score, fill=as.factor(cluster))) +
+   geom_boxplot() +
+   scale_fill_brewer(palette="Dark2") +
+   labs(x="Cluster",
+        y="Hill farming index",
+        fill="Hilliness\ncluster") +
+   theme_bw() +
+   theme(line=element_blank())
+```
