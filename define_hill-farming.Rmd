@@ -262,7 +262,7 @@ The proportion of each agricultural parish designated as wild land was calculate
 plot.map("wildland_prop", "Wild land\nProportion")
 ```
 
-### Protected areas
+### National Nature Reserves
 
 SNH's National Nature Reserve (NNR) data were used as a proxy for hill farming areas, because NNRs are often upland areas, e.g. Beinn Eighe.
 Like wild land, they are binary so the proportion of each agricultural parish classified as an NNR was calculated and mapped (below).
@@ -302,11 +302,41 @@ plot.map("peat_prop", "Peat\nProportion")
 
 ### JHI LCA Land capability for agriculture
 
+The James Hutton Institute produce a land capability index for agriculture based on soil, climate and relief.
+We downloaded the 1:250k resolution version, as it covers the whole of Scotland.
+The vector dataset classifies areas of Scotland by their agricultural capability, these classes are:
+
+* Class 1. Land capable of producing a very wide range of crops with high yields
+* Class 2. Land capable of producing a wide range of crops with yields less high than Class 1.
+* Class 3. Land capable of producing good yields from a moderate range of crops.
+* Class 4. Land capable of producing a narrow range of crops.
+* Class 5. Land suited only to improved grassland and rough grazing.
+* Class 6. Land capable only of use as rough grazing.
+* Class 7. Land of very limited agricultural value.
+* Classes >10. Urban areas, etc..
+
+Polygons classed as 6 or 7 were aggregated and the proportion of agricultural parishes lying within them calculated.
+These are shown in the following map, which has the highest proportions in the central and western Highlands.
+
 ```{r JHI_lca}
 plot.map("land_cap_ag_prop", "Agriculture\n6 & 7 class\nProportion")
 ```
 
 ### JHI LCA Land capability for forestry
+
+The James Hutton Institute produce a land capability index for forestry.
+They have classified areas of Scotland according to the challenge of timber growth, these classes are:
+
+* Class F1. Land with excellent flexibility for the growth and management of tree crops.
+* Class F2. Land with very good flexibility for the growth and management of tree crops.
+* Class F3. Land with good flexibility for the growth and management of tree crops.
+* Class F4. Land with moderate flexibility for the growth and management of tree crops.
+* Class F5. Land with limited flexibility for the growth and management of tree crops.
+* Class F6. Land with very limited flexibility for the growth and management of tree crops.
+* Class F7. Land unsuitable for producing tree crops.
+
+Areas classified as F6 or F7 were aggregated and the proportion contained within each parish calculated.
+These proportions are presented below, where North West Scotland and the Cairngorms have the highest proportion of land where forestry is a challenge.
 
 ```{r JHI_lcf}
 plot.map("land_cap_forest_prop", "Forestry\nF6 & F7\nProportion")
