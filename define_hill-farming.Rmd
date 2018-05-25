@@ -2,7 +2,7 @@
 title: "Defining hill farming"
 author: "Mike Spencer"
 date: "16 April 2018"
-output: word_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -14,25 +14,30 @@ library(viridis)
 library(knitr)
 ```
 
+
 ## Introduction
 
 ### Purpose
 
+This document is part of a project evaluating the importance of hill farming in Scottish communities. There is no existing classification of hill farming in Scotland, therefore an index of hill farming needed to be created to evalute its contribution. We chose to do this at an agricultural parish level using datasets describing landscape.
+
 ### Output level
 
-Will be agricultural parishes.
-2016 data, downloaded from: <https://data.gov.uk/dataset/939fdd5e-7322-4ab7-9dc9-bbfc538c4477/agricultural-parishes>.
-
+Results will be aggregated to agricultural parishes, as this administrative level is widely understood and is appropriate for anonymising data.
+The 2016 agricultural parish data were downloaded from: <https://data.gov.uk/dataset/939fdd5e-7322-4ab7-9dc9-bbfc538c4477/agricultural-parishes>.
 
 ```{r agricultural_parishes, fig.cap="2016 agricultural parishes"}
 parishes = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/ag_parishes_2016.gpkg"), "simplified_parishes")
+
+Scotland = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/ag_parishes_2016.gpkg"), "Scotland") %>% 
+   tidy()
 
 parishes$id = row.names(parishes)
 parishes = tidy(parishes) %>% 
    left_join(parishes@data)
 
 ggplot(parishes, aes(long, lat, group=group)) +
-   geom_polygon(colour="grey20", fill="grey90", size=0.1) +
+   geom_polygon(colour="grey30", fill="grey90", size=0.05) +
    coord_equal() +
    theme_minimal() +
    theme(axis.text=element_blank(),
@@ -40,20 +45,26 @@ ggplot(parishes, aes(long, lat, group=group)) +
          line=element_blank())
 ```
 
-There are `r length(unique(parishes$PARCode))` agricultural parishes in Scotland.
-Why report at ag parish level?
+The above map shows the `r length(unique(parishes$PARCode))` agricultural parishes in Scotland.
+These vary in size between `r min(parishes$Shape_Area)/1e+06` and `r max(parishes$Shape_Area)/1e+06` km².
 
 ## Defining hill farming
 
-Data were collected from a variety of sources:
+A simple view of hill farming is of an activity which takes place in hills, but how are hills defined?
+Measuring hilliness by elevation would diminish the challenges of farming smaller hill areas like the Pentlands and Campsies, because they are a third of the height of the biggest mountains in Scotland.
+Incorporating slope into a measure of hill farming would help overcome using only elevation as a measure of hilliness because slopes can be steep without hills needing to be high.
 
-* Urban/rural: <http://www.gov.scot/Publications/2018/03/6040/downloads>
-* Elevation: <https://www.ordnancesurvey.co.uk/business-and-government/products/terrain-50.html>
-* SNH LCA Landscape Character Assessment: <https://gateway.snh.gov.uk/natural-spaces/>
+There are many datasets available which we can use to further form an idea of hill farming areas. We have collected data from a variety of sources to help define hill farming:
+
+* Urban/rural classification: <http://www.gov.scot/Publications/2018/03/6040/downloads>
+* Elevation (including derived slope): <https://www.ordnancesurvey.co.uk/business-and-government/products/terrain-50.html>
+* Scottish Natural Heritage (SNH) Landscape Character Assessment (LCA): <https://gateway.snh.gov.uk/natural-spaces/>
 * SNH Wild land: <https://gateway.snh.gov.uk/natural-spaces/>
-* JHI LCA Land capability for agriculture: <http://www.hutton.ac.uk/learning/natural-resource-datasets>
-* JHI LCA Land capability for forestry: <http://www.hutton.ac.uk/learning/natural-resource-datasets>
-* Agricultural census **rough grazing - to do**: RESAS
+* SNH National Nature Reserves (NNR): <https://gateway.snh.gov.uk/natural-spaces/>
+* SNH Carbon and Peatland map: <https://gateway.snh.gov.uk/natural-spaces/>
+* James Hutton Institute (JHI) Land capability for agriculture: <http://www.hutton.ac.uk/learning/natural-resource-datasets>
+* JHI Land capability for forestry: <http://www.hutton.ac.uk/learning/natural-resource-datasets>
+* Agricultural census common grazing: RESAS
 
 ```{r data load}
 restrictions = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/parish_restrictions.csv") %>% 
@@ -64,95 +75,131 @@ parishes = parishes %>%
    mutate_all(funs(replace(., is.na(.), 0)))
 ```
 
-Preparation of these datasets extracted data at an agricultural parish level.
+### Definition method
+
+Data described in the previous section were available in a range of formats, including raster (grid), vector (polygons) and plain text.
+In order to assess all these data at an agricultural parish level, these data were aggregated and converted to a common format.
+Following this process data were converted to a proportion of hilliness in each parish, e.g. for rural urban classification the proportion of each parish classified as rural was calculated.
+
 Exact specification for this process is detailed in:
 
 * `grass_read.R` which reads files into GRASS GIS
 * `grass_analysis.R` clips polygon data to agricultural parishes and measures subsequent polygon sizes. Terrain values (elevation and slope) are also extracted from raster data.
 * `read_hill_class.R` combines data from the GRASS analysis and aggregates to parish levels. Crucially, at a parish level proportion of land is reported as being less viable, i.e. higher proportions mean a parish is more likely to be hill farming.
 
-### Urban rural
+```{r functions}
+plot.map = function(i, tit){
+   ggplot(parishes, aes(long, lat, group=group)) +
+      geom_polygon(aes_string(fill=i)) +
+      geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+      coord_equal() +
+      scale_fill_distiller(palette="Greens", direction=1) +
+      labs(fill=tit) +
+      theme_minimal() +
+      theme(axis.text=element_blank(),
+            axis.title=element_blank(),
+            line=element_blank())
+}
 
-Agricultural parishes cover the entire land mass of Scotland, so some are predominantly urban areas.
-Below is a map showing the proportion of each parish which is classified as rural in the two fold urban-rural classification.
-
-```{r urban-rural_map}
-ggplot(parishes, aes(long, lat, fill=rural_prop, group=group)) +
-   geom_polygon() +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Rural\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+panel.cor = function(x, y, digits = 2, prefix = "", cex.cor, ...){
+    usr = par("usr"); on.exit(par(usr))
+    par(usr=c(0, 1, 0, 1))
+    r = cor(x, y)
+    txt = format(c(r, 0.123456789), digits = digits)[1]
+    txt = paste0(prefix, txt)
+    if(missing(cex.cor)) cex.cor = 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = cex.cor * r)
+}
 ```
-
-Urban-rural classification does not make a distiction between upland and lowland areas, but a remoteness index of how long it takes to travel (by driving) to the nearest town. Hence, it does not represent the ease or challenge of farming in a given parish. It does, however give an indication of proximity to market.
 
 
 ### Terrain
 
-A digital elevation model was used to get terrain data for each parish.
-These were for elevation and slope and values extracted were minimum, mean, median and maximum.
+The Ordnance Survey Terrain 50 digital elevation model was used to get terrain data for each parish.
+This gridded model has a 50 m cell resolution and each cell is attributed an average height of land contained within it.
+This elevation model was used to calculate slope, also on a 50 m grid.
+For the slope and elevation datasets summary values were extracted for each agricultural parish; these values were minimum, mean, median and maximum.
 
 #### Elevation
 
-How do different elevation measures relate to each other?
+The four measures of elevation were compared in order to select a single indicator.
+These comparisons are shown below, with the numeric values being Pearson correlation coefficients.
 
 ```{r elevation_pairs, fig.height=8, fig.width=8}
 restrictions %>% 
    select(elev__minimum, elev__average, elev__median, elev__maximum) %>% 
-   pairs()
+   pairs(col=rgb(0, 75/255, 35/255, 0.25),
+         upper.panel=panel.cor,
+         main="Elevation measure comparisions")
 ```
 
-Mean (average), median and maximum elevation appear to be closely related, but there is variability between each of these and minimum elevation. This is likely due to in-cell elevation variation, e.g. some cells will have a range from 0 to 1000 m, but others a small range.
+Mean (average), median and maximum elevation are closely correlated, but there is variability between each of these and minimum elevation.
+This is due to within-parish elevation variation, e.g. some parishes will have a range from sea level to mountain top, but other parishes a occupy more level terrain.
+The elevation range within a parish could have been used, but this would largely duplicate slope, i.e. a big elevation range within a parish should produce a steeper slope.
 
-Median parish elevation has been chosen as a single measure of parish elevation.
+Mean parish elevation has been chosen as a single measure of parish elevation.
+This because it is a central measure which captures the variation of the minimum, median and maximum best (correlations of 0.77, 0.99 and 0.94 respectively).
 
 ```{r elevation}
-ggplot(parishes, aes(long, lat, fill=elev__median, group=group)) +
-   geom_polygon() +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Elevation\n median (m)") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("elev__average", "Elevation\nmean (m)")
 ```
 
 
 #### Slope
 
-How do different slope measures relate to each other?
+As for elevation, slope measures were compared to each other (below).
+This plot matrix shows scatter plots between the measures in the lower left and Pearson's correlations in the upper right.
 
 ```{r slope_pairs, fig.height=8, fig.width=8}
 restrictions %>% 
    select(slope__minimum, slope__average, slope__median, slope__maximum) %>% 
-   pairs()
+   pairs(col=rgb(0, 75/255, 35/255, 0.25),
+         upper.panel=panel.cor,
+         main="Slope measure comparisions")
 ```
 
-As with elevation, the average (mean and median) slope measures correlate well. There is greater variability when compared to maximum slopes, but the largest variation is when comparing these to minimum slopes.
+As with elevation, the average (mean and median) slope measures correlate well.
+There is greater variability when compared to maximum slopes, but the largest variation is when comparing to minimum slopes.
 
-A median slope has been used as a single parish slope indicator.
+A mean (average) slope has been used as a single parish slope indicator because it has the best correlation with median or maximum slope (0.98 and 0.71 respectively).
 
-```{r slope, fig.height=10}
-ggplot(parishes, aes(long, lat, fill=slope__median, group=group)) +
-   geom_polygon() +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Slope median\n(degrees)") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+```{r slope}
+plot.map("slope__average", "Slope\nmean\n(degrees)")
+```
+
+
+### Urban rural
+
+Agricultural parishes cover the entire land mass of Scotland, so some are predominantly urban areas.
+Below is a map showing the proportion of each parish which is classified as rural in the Scottish Government two fold urban-rural classification.
+
+```{r urban-rural_map}
+plot.map("rural_prop", "Rural\nProportion")
+```
+
+Urban-rural classification does not make a distiction between upland and lowland areas, but a remoteness index of how long it takes to travel (by driving) to the nearest town.
+Hence, it does not represent the ease or challenge of farming in a given parish.
+It does, however give an indication of proximity to market.
+
+
+### Common grazing
+
+The common grazing data were supplied by RESAS at a parish level in a csv format, so needed no format conversion or aggregation preparation.
+Common grazing data were sent with units of Hectares per parish, these were converted to m² before deriving proportion of common grazing within each parish.
+Common grazing is most dominant in the Outter Hebridies and North West Scotland.
+
+```{r common_grazing}
+plot.map("grazing_prop", "Common\ngrazing\nproportion")
 ```
 
 
 ### SNH LCA Landscape Character Assessment
 
-The following have been taken from the SNH landscape character assessment level 3 as hill farming:
+The SNH landscape character assessment has three levels.
+Level 1 has the most different landscape classes and level 3 has the least.
+As this work is concerned with aggregating data to define parishes, level 3 data were used as a hill farming indicator.
+Level 3 data were split as follows to define hill farming areas:
 
 ```{r SNH_lca_character}
 x = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/LCA_SCOTLAND_parishes.csv") %>% 
@@ -189,56 +236,46 @@ y = c("Flat or Rolling, Smooth or Sweeping, Extensive, High Moorlands of the Hig
                            "Knock or Rock and Lochan of the Islands",
                            "Highland Cnocan")
 
-data.frame(hill_farming=y) %>% 
-   kable()
+data.frame(y) %>% 
+   kable(col.names="Hill farming classes")
 
-data.frame(not_hill_farming=x$a_LEVEL_3[!x$a_LEVEL_3 %in% y]) %>%
-   kable()
+data.frame(x$a_LEVEL_3[!x$a_LEVEL_3 %in% y]) %>%
+   kable(col.names="Not hill farming classes")
 ```
 
+As can be seen, some of these descriptions are a little ambiguous.
+For example "Upland Basin" describes both a hill and glen feature.
+
+Following this separation of landscape classes, the proportions in each parish were calculated, these are mapped below.
+The upland areas of the Cairngorms, Western Highlands and North West Scotland dominate this map.
 
 ```{r SNH_lca}
-parishes %>% 
-   ggplot(aes(long, lat, fill=landscape_class_prop, group=group)) +
-   geom_polygon() +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Upland\nLandscape\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("landscape_class_prop", "SNH\nUpland\nLandscape\nProportion")
 ```
 
 ### SNH Wild land
 
+SNH's Wild land data are binary: either an area is wild land or it is not.
+The proportion of each agricultural parish designated as wild land was calculated and these results are mapped below. Wild land areas are largely confined to North West Scotland.
+
 ```{r SNH_wild_land}
-parishes %>% 
-   ggplot(aes(long, lat, fill=wildland_prop, group=group)) +
-   geom_polygon() +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Wild land\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("wildland_prop", "Wild land\nProportion")
 ```
 
-#### Protected areas
+### National Nature Reserves
+
+SNH's National Nature Reserve (NNR) data were used as a proxy for hill farming areas, because NNRs are often upland areas, e.g. Beinn Eighe.
+Like wild land, they are binary so the proportion of each agricultural parish classified as an NNR was calculated and mapped (below).
 
 ```{r SNH_NNR}
-parishes %>% 
-   ggplot(aes(long, lat, fill=NNR_prop, group=group)) +
-   geom_polygon() +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="NNR\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("NNR_prop", "NNR\nProportion")
 ```
+
+### Carbon and peatland
+
+SNH produce a map of carbon rich soils and peatland, these are polygon data with each polygon taking a categorical variable.
+These classifications were split into those which might indicate hill farming and those which do not.
+These classifications are listed below:
 
 ```{r SNH_peat_areas}
 x = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/PEAT_SCOTLAND_parishes.csv") %>% 
@@ -248,160 +285,85 @@ x = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/PEAT_SCOTLA
 y=c("Blanket bog/peat. veg.", "Water", "Montane veg.", "Cliffs", "Dubh lochans", "Undiff. heather moor", "Other peat", "Wet heather moor", "Dry heather moor", "Quarries", "Wetlands", "Dune lands", "Bings (area)", "Smooth grass/rushes", "Undiff. Nardus/Molinia", "Snow cover", "Industrial peat", "Ski tows", "Rhododendron")
 
 data.frame(peat_areas=y) %>% 
-   kable()
+   kable(col.names="Hill farming classes")
 
 data.frame(not_peat_areas=x$a_PRIMARY_LA[!x$a_PRIMARY_LA %in% y]) %>%
-   kable()
+   kable(col.names="Not hill farming classes")
 ```
+
+Many of these classifications do not obviously relate to the peat or carbon areas, e.g. cloud cover.
+Those believed to indicate hill farming constraints were used to calculate the proportion of agricultural parish within them and are plotted below.
+North West Scotland appears as the highest proportion using these measures.
 
 ```{r SNH_peat}
-parishes %>% 
-   ggplot(aes(long, lat, fill=peat_prop, group=group)) +
-   geom_polygon() +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Peat\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("peat_prop", "Peat\nProportion")
 ```
 
-```{r SNH_SPA}
-parishes %>% 
-   ggplot(aes(long, lat, fill=SPA_prop, group=group)) +
-   geom_polygon() +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="SPA\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
-```
 
 ### JHI LCA Land capability for agriculture
 
+The James Hutton Institute produce a land capability index for agriculture based on soil, climate and relief.
+We downloaded the 1:250k resolution version, as it covers the whole of Scotland.
+The vector dataset classifies areas of Scotland by their agricultural capability, these classes are:
+
+* Class 1. Land capable of producing a very wide range of crops with high yields
+* Class 2. Land capable of producing a wide range of crops with yields less high than Class 1.
+* Class 3. Land capable of producing good yields from a moderate range of crops.
+* Class 4. Land capable of producing a narrow range of crops.
+* Class 5. Land suited only to improved grassland and rough grazing.
+* Class 6. Land capable only of use as rough grazing.
+* Class 7. Land of very limited agricultural value.
+* Classes >10. Urban areas, etc..
+
+Polygons classed as 6 or 7 were aggregated and the proportion of agricultural parishes lying within them calculated.
+These are shown in the following map, which has the highest proportions in the central and western Highlands.
+
 ```{r JHI_lca}
-parishes %>% 
-   ggplot(aes(long, lat, fill=land_cap_ag_prop, group=group)) +
-   geom_polygon() +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Agriculture\n6 & 7 class\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("land_cap_ag_prop", "Agriculture\n6 & 7 class\nProportion")
 ```
 
 ### JHI LCA Land capability for forestry
 
+The James Hutton Institute produce a land capability index for forestry.
+They have classified areas of Scotland according to the challenge of timber growth, these classes are:
+
+* Class F1. Land with excellent flexibility for the growth and management of tree crops.
+* Class F2. Land with very good flexibility for the growth and management of tree crops.
+* Class F3. Land with good flexibility for the growth and management of tree crops.
+* Class F4. Land with moderate flexibility for the growth and management of tree crops.
+* Class F5. Land with limited flexibility for the growth and management of tree crops.
+* Class F6. Land with very limited flexibility for the growth and management of tree crops.
+* Class F7. Land unsuitable for producing tree crops.
+
+Areas classified as F6 or F7 were aggregated and the proportion contained within each parish calculated.
+These proportions are presented below, where North West Scotland and the Cairngorms have the highest proportion of land where forestry is a challenge.
+
 ```{r JHI_lcf}
-parishes %>% 
-   ggplot(aes(long, lat, fill=land_cap_forest_prop, group=group)) +
-   geom_polygon() +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Forestry\nF6 & F7\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
-```
-
-### Common grazing
-
-```{r common_grazing}
-cg = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/common_grazing.csv") %>% 
-   select(-Name)
-
-parishes = parishes %>% 
-   left_join(cg) %>% 
-   mutate(common_grazing=replace(common_grazing, is.na(common_grazing), 0))
-
-restrictions = restrictions %>% 
-   left_join(cg) %>% 
-   mutate(common_grazing=replace(common_grazing, is.na(common_grazing), 0))
-
-parishes %>% 
-   ggplot(aes(long, lat, fill=common_grazing, group=group)) +
-   geom_polygon() +
-   coord_equal() +
-   scale_fill_viridis() +
-   labs(fill="Common\nGrazing\nProportion") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
+plot.map("land_cap_forest_prop", "Forestry\nF6 & F7\nProportion")
 ```
 
 
+## Score and rank for the hilliness of each parish
 
-## Group parishes into similar levels
+The previous section describes a range of indices which can indicate hill farming areas.
+We have combined to produce a single index of hill farming areas.
 
-How related are proportions?
+The majority of the indicies have maximum values of one, because they show proportions.
+However, elevation and slope have maximum values above one.
+To create an unweighted index slope and elevation have been normalised by dividing values by their series maximums.
+These individual indicies were then summed for each parish to create a single index of hill farming for Scotland.
 
-```{r proportion_pairs, fig.height=10, fig.width=10}
-restrictions %>% 
-   select(elev__median, slope__median, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, peat_prop, NNR_prop) %>% 
-   pairs()
-```
-
-### Build k-means model
-
-```{r build}
-x = restrictions %>% 
-   select(elev__median, slope__median, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, NNR_prop, peat_prop)
-
-# Standardise values
-x = scale(x)
-
-# Determine number of clusters
-wss = (nrow(x) -1) * sum(apply(x, 2, var))
-for (i in 2:10){
-   wss[i] = sum(kmeans(x, centers=i)$withinss)
-}
-
-plot(1:10, wss, type="b", main="Required number of clusters", xlab="Number of Clusters", ylab="Within groups sum of squares")
-```
-
-```{r run}
-fit = kmeans(x, 2) # 2 cluster solution
-
-# append cluster assignment
-restrictions = data.frame(restrictions, cluster=fit$cluster)
-```
-
-```{r map}
-parishes = parishes %>% 
-   left_join(select(restrictions, PARCode, cluster))
-
-parishes %>% 
-   ggplot(aes(long, lat, fill=as.character(cluster), group=group)) +
-   geom_polygon() +
-   coord_equal() +
-   scale_fill_brewer(palette="Dark2") +
-   labs(fill="Hill or not") +
-   theme_minimal() +
-   theme(axis.text=element_blank(),
-         axis.title=element_blank(),
-         line=element_blank())
-```
-
-
-## Rank/score each parish in terms of hilliness
-
-Create a score, which can then be ranked.
+The results of this summation can be seen in the map below.
+The Cairngorms score highest, with areas in the central and western Highlands, North West Scotland and the Outer Hebridies also scoring highly.
 
 ```{r score}
 score = restrictions %>% 
    select(-PARName,
-          -elev__minimum, -elev__average, -elev__maximum,
-          -slope__minimum, -slope__average, -slope__maximum,
-          -SPA_prop, -common_grazing) %>% 
-   mutate(elev__median=elev__median/max(elev__median),
-          slope__median=slope__median/max(slope__median)) %>% 
+          -elev__minimum, -elev__median, -elev__maximum,
+          -slope__minimum, -slope__median, -slope__maximum,
+          -SPA_prop) %>% 
+   mutate(elev__average=elev__average/max(elev__average),
+          slope__average=slope__average/max(slope__average)) %>% 
    gather(variable, value, -PARCode) %>% 
    group_by(PARCode) %>% 
    summarise(score=sum(value))
@@ -421,3 +383,126 @@ parishes %>%
          line=element_blank())
 ```
 
+The index of hill farming was ranked to show relative positions of each parish.
+These results are below:
+
+```{r rank}
+x = score %>% 
+   mutate(rank=rank(desc(score))) %>% 
+   select(-score)
+
+parishes = parishes %>% 
+   left_join(x)
+
+ggplot(parishes, aes(long, lat, group=group)) +
+      geom_polygon(aes(fill=rank)) +
+      geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+      coord_equal() +
+      scale_fill_distiller(palette="Greens", direction=-1) +
+      labs(fill="Hilliness\nrank") +
+      theme_minimal() +
+      theme(axis.text=element_blank(),
+            axis.title=element_blank(),
+            line=element_blank())
+```
+
+The top 15 ranked parishes are:
+
+```{r rank 20}
+score %>% 
+   left_join(select(restrictions, PARCode, PARName)) %>% 
+   top_n(15, wt=score) %>% 
+   select(PARName)
+```
+
+
+## Group parishes into similar levels
+
+We can use the individual indicies to group similar parishes together.
+First, we can inspect the relationships between indicies in the plot matrix below.
+Numbers in the upper right panels are Pearson correlations.
+
+```{r proportion_pairs, fig.height=10, fig.width=10}
+restrictions %>% 
+   select(elev__average, slope__average, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, peat_prop, NNR_prop) %>% 
+   pairs(col=rgb(0, 75/255, 35/255, 0.25),
+         upper.panel=panel.cor,
+         main="Hilliness indicator comparisons")
+```
+
+The most well correlated variables are the JHI land capability indicies and the SNH Peat and Carbon map.
+These indicies use JHI soil data, so relationships are expected.
+
+We can use a k-means model to group similar parishes together.
+K-means works by looking for common averages to cluster data points around.
+The following sections detail this work.
+
+### Build k-means model
+
+A k-means model was built using standarised elev__average, slope__average, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, NNR_prop and peat_prop variables.
+The optimum number of cluster were determined using the elbow method, where we try to minimise the total intra-cluster variation.
+In this case, the below plot indicates two clusters may be appropriate, however these data are a little messy.
+
+```{r kmean build}
+x = restrictions %>% 
+   select(elev__average, slope__average, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, NNR_prop, peat_prop)
+
+# Standardise values
+x = scale(x)
+
+# Determine number of clusters
+wss = (nrow(x) -1) * sum(apply(x, 2, var))
+for (i in 2:10){
+   wss[i] = sum(kmeans(x, centers=i)$withinss)
+}
+
+plot(1:10, wss, type="b", main="Required number of clusters", xlab="Number of Clusters", ylab="Within groups sum of squares")
+```
+
+```{r kmean run}
+set.seed(224)
+
+fit2 = kmeans(x, 2) # 2 cluster solution
+
+# append cluster assignment
+restrictions = data.frame(restrictions, cluster2=fit2$cluster)
+```
+
+These two clusters can then be mapped to our parishes as two levels: hill farming areas and not hill farming areas (below).
+As we expect, these are largely similar to the hill farming index, but partitioned into two groups.
+
+```{r kmean_map}
+parishes = parishes %>% 
+   left_join(select(restrictions, PARCode, cluster2))
+
+parishes %>% 
+   ggplot(aes(long, lat, group=group)) +
+   geom_polygon(aes(fill=as.character(cluster2))) +
+   geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+   coord_equal() +
+   scale_fill_brewer(palette="Dark2") +
+   labs(fill="Hill or not") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+```
+
+We can see the difference in hill farming index against the two cluster groups below:
+
+```{r cluster index}
+parishes %>% 
+   group_by(PARCode) %>% 
+   summarise(score=unique(score),
+             cluster=unique(cluster2)) %>% 
+   ggplot(aes(as.factor(cluster), score, fill=as.factor(cluster))) +
+   geom_boxplot() +
+   scale_fill_brewer(palette="Dark2") +
+   labs(x="Cluster",
+        y="Hill farming index",
+        fill="Hilliness\ncluster") +
+   theme_bw() +
+   theme(line=element_blank())
+```
