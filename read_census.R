@@ -87,7 +87,8 @@ areas_2001 = read_csv("projects/hill_farming/data/OutputAreas2001_parishes.csv")
           pop_male_2001=ceiling(pop_male_2001 * area_prop),
           pop_female_2001=ceiling(pop_female_2001 * area_prop),
           pop_working_all_2001=ceiling(pop_working_all_2001 * area_prop),
-          pop_working_land_2001=ceiling(pop_working_land_2001 * area_prop)) %>% 
+          pop_working_land_2001=ceiling(pop_working_land_2001 * area_prop),
+          pop_working_service_2001=ceiling(pop_working_service_2001 * area_prop)) %>% 
    select(-OutputAreas2001_area, -a_OutputAreas2001_t_area, -area_prop, -TAG) %>% 
    group_by(PARCode, PARName) %>% 
    summarise_all(sum)
@@ -101,7 +102,8 @@ areas_2011 = read_csv("projects/hill_farming/data/OutputArea2011_MHW_parishes.cs
           pop_male_2011=ceiling(pop_male_2011 * area_prop),
           pop_female_2011=ceiling(pop_female_2011 * area_prop),
           pop_working_all_2011=ceiling(pop_working_all_2011 * area_prop),
-          pop_working_land_2011=ceiling(pop_working_land_2011 * area_prop)) %>% 
+          pop_working_land_2011=ceiling(pop_working_land_2011 * area_prop),
+          pop_working_service_2011=ceiling(pop_working_service_2011 * area_prop)) %>% 
    select(-OutputArea2011_MHW_area, -a_OutputArea2011_MHW_t_area, -area_prop, -census_id) %>% 
    group_by(PARCode, PARName) %>% 
    summarise_all(sum)
