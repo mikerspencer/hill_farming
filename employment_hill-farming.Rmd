@@ -1,0 +1,184 @@
+---
+title: "Hill farming and employment"
+author: "Mike Spencer"
+date: "3 July 2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=F, message=F)
+library(rgdal)
+library(broom)
+library(tidyverse)
+library(viridis)
+library(knitr)
+```
+
+
+## Introduction
+
+### Purpose
+
+This document is part of a project evaluating the importance of hill farming in Scottish communities.
+
+### Output level
+
+Results will be aggregated to agricultural parishes, as this administrative level is widely understood and is appropriate for anonymising data.
+The 2016 agricultural parish data were downloaded from: <https://data.gov.uk/dataset/939fdd5e-7322-4ab7-9dc9-bbfc538c4477/agricultural-parishes>.
+
+```{r agricultural_parishes, fig.cap="2016 agricultural parishes"}
+parishes = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/ag_parishes_2016.gpkg"), "simplified_parishes")
+
+Scotland = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/ag_parishes_2016.gpkg"), "Scotland") %>% 
+   tidy()
+
+parishes$id = row.names(parishes)
+parishes = tidy(parishes) %>% 
+   left_join(parishes@data)
+```
+
+```{r data load}
+restrictions = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/parish_restrictions.csv") %>% 
+   mutate_all(funs(replace(., is.na(.), 0)))
+
+census = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/pop_census.csv") %>% 
+   mutate_all(funs(replace(., is.na(.), 0)))
+
+parishes = parishes %>% 
+   left_join(census, by=c("PARCode"="PARCode", "PARName"="PARName")) %>% 
+   mutate_all(funs(replace(., is.na(.), 0)))
+```
+
+
+```{r functions}
+plot.map = function(i, tit){
+   ggplot(parishes, aes(long, lat, group=group)) +
+      geom_polygon(aes_string(fill=i)) +
+      geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+      coord_equal() +
+      scale_fill_distiller(palette="Greens", direction=1) +
+      labs(fill=tit) +
+      theme_minimal() +
+      theme(axis.text=element_blank(),
+            axis.title=element_blank(),
+            line=element_blank())
+}
+
+prop.map = function(i, j, tit){
+   parishes %>% 
+      rename_(x=i, y=j) %>% 
+      mutate(plot_col=x / y) %>% 
+   ggplot(aes(long, lat, group=group)) +
+      geom_polygon(aes(fill=plot_col)) +
+      geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+      coord_equal() +
+      scale_fill_distiller(palette="Greens", direction=1) +
+      labs(fill=tit) +
+      theme_minimal() +
+      theme(axis.text=element_blank(),
+            axis.title=element_blank(),
+            line=element_blank())
+}
+
+panel.cor = function(x, y, digits = 2, prefix = "", cex.cor, ...){
+    usr = par("usr"); on.exit(par(usr))
+    par(usr=c(0, 1, 0, 1))
+    r = cor(x, y)
+    txt = format(c(r, 0.123456789), digits = digits)[1]
+    txt = paste0(prefix, txt)
+    if(missing(cex.cor)) cex.cor = 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = cex.cor * r)
+}
+```
+
+## Absolute values
+
+```{r pop totals}
+plot.map("pop_all_2011", "2011\npopulation")
+
+plot.map("pop_working_all_2011", "2011 working\npopulation")
+
+plot.map("pop_working_land_2011", "2011 working in\nprimary production\npopulation")
+```
+
+Note that these results are skewed by an issue with island polygons.
+
+## Proportions
+
+Proportions should correct nearly all issues with island polygons (until I fix the underlying cause).
+
+```{r pop proportions}
+prop.map("pop_working_land_2011", "pop_all_2011", "Proportion of\ntotal population\nemployed in\nprimary production")
+
+prop.map("pop_working_land_2011", "pop_working_all_2011", "Proportion of\nworking population\nemployed in\nprimary production")
+```
+
+## Checking!
+
+### Aggregated to agricultural parishes
+
+* Total people in 2011 = `r sum(census$pop_all_2011)`
+* Proportion in land/primary of total population in 2011 = `r scales::percent(sum(census$pop_working_land_2011) / sum(census$pop_all_2011))`
+* Proportion in land/primary of working population in 2011 = `r scales::percent(sum(census$pop_working_land_2011) / sum(census$pop_working_all_2011))`
+
+### Using raw census output areas
+
+```{r census OAs}
+census_OA = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/census2011.csv") %>%
+   filter(census_id!="Scotland")
+
+census_spatial = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/", "OutputArea2011_MHW.shp"))
+   
+census_spatial$id = row.names(census_spatial)
+census_spatial = tidy(census_spatial) %>% 
+   left_join(census_spatial@data) %>% 
+   select(long, lat, order, hole, piece, group, OBJECTID, code) %>% 
+   left_join(census_OA, by=c("code"="census_id"))
+```
+
+* Total people in 2011 = `r sum(census_OA$pop_all_2011)`
+* Proportion in land/primary of total population in 2011 = `r scales::percent(sum(census_OA$pop_working_land_2011) / sum(census_OA$pop_all_2011))`
+* Proportion in land/primary of working population in 2011 = `r scales::percent(sum(census_OA$pop_working_land_2011) / sum(census_OA$pop_working_all_2011))`
+
+Aggregation is causing inflation in certain areas. Likely due to rounding error, where proportions of a person are increased to the next whole number.
+
+```{r census map}
+ggplot(census_spatial, aes(long, lat, group=group)) +
+      geom_polygon(aes(fill=pop_working_land_2011)) +
+      geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+      coord_equal() +
+      scale_fill_distiller(palette="Greens", direction=1) +
+      labs(fill="Population\nworking on\nthe land (2011)") +
+      theme_minimal() +
+      theme(axis.text=element_blank(),
+            axis.title=element_blank(),
+            line=element_blank())
+
+ggplot(census_spatial, aes(long, lat, group=group)) +
+      geom_polygon(aes(fill=pop_working_land_2011/pop_all_2011)) +
+      geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+      coord_equal() +
+      scale_fill_distiller(palette="Greens", direction=1) +
+      labs(fill="Proportion of\npopulation\nin primary\nproduction (2011)") +
+      theme_minimal() +
+      theme(axis.text=element_blank(),
+            axis.title=element_blank(),
+            line=element_blank())
+
+ggplot(census_spatial, aes(long, lat, group=group)) +
+      geom_polygon(aes(fill=pop_working_land_2011/pop_working_all_2011)) +
+      geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+      coord_equal() +
+      scale_fill_distiller(palette="Greens", direction=1) +
+      labs(fill="Proportion of\nworking population\nin primary\nproduction (2011)") +
+      theme_minimal() +
+      theme(axis.text=element_blank(),
+            axis.title=element_blank(),
+            line=element_blank())
+```
+
