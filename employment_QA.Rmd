@@ -1,5 +1,5 @@
 ---
-title: "Hill farming and employment"
+title: "Census employment data QA"
 author: "Mike Spencer"
 date: "3 July 2018"
 output: word_document
@@ -19,12 +19,8 @@ library(knitr)
 
 ### Purpose
 
-This document is part of a project evaluating the importance of hill farming in Scottish communities.
+This document is part of a project evaluating the importance of hill farming in Scottish communities. It compares census data at output area level (as downloaded), to aggregations at agricultural parish level.
 
-### Output level
-
-Results will be aggregated to agricultural parishes, as this administrative level is widely understood and is appropriate for anonymising data.
-The 2016 agricultural parish data were downloaded from: <https://data.gov.uk/dataset/939fdd5e-7322-4ab7-9dc9-bbfc538c4477/agricultural-parishes>.
 
 ```{r agricultural_parishes, fig.cap="2016 agricultural parishes"}
 parishes = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/ag_parishes_2016.gpkg"), "simplified_parishes")
@@ -38,9 +34,6 @@ parishes = tidy(parishes) %>%
 ```
 
 ```{r data load}
-restrictions = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/parish_restrictions.csv") %>% 
-   mutate_all(funs(replace(., is.na(.), 0)))
-
 census = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/pop_census.csv") %>% 
    mutate_all(funs(replace(., is.na(.), 0)))
 
@@ -93,7 +86,7 @@ panel.cor = function(x, y, digits = 2, prefix = "", cex.cor, ...){
 }
 ```
 
-## Absolute values
+## Absolute values for agricultural parishes
 
 ```{r pop totals}
 plot.map("pop_all_2011", "2011\npopulation")
@@ -103,11 +96,11 @@ plot.map("pop_working_all_2011", "2011 working\npopulation")
 plot.map("pop_working_land_2011", "2011 working in\nprimary production\npopulation")
 ```
 
-Note that these results are skewed by an issue with island polygons.
+Note that these results may be skewed by an issue with island polygons.
 
-## Proportions
+## Proportions for agricultural parishes
 
-Proportions should correct nearly all issues with island polygons (until I fix the underlying cause).
+Proportions should correct nearly all potential issues with island polygons (until I fix the underlying cause), because populations are elevated for all areas. So taking relative values (proportions) 
 
 ```{r pop proportions}
 prop.map("pop_working_land_2011", "pop_all_2011", "Proportion of\ntotal population\nemployed in\nprimary production")
@@ -115,15 +108,19 @@ prop.map("pop_working_land_2011", "pop_all_2011", "Proportion of\ntotal populati
 prop.map("pop_working_land_2011", "pop_working_all_2011", "Proportion of\nworking population\nemployed in\nprimary production")
 ```
 
-## Checking!
+## Checks
 
 ### Aggregated to agricultural parishes
 
 * Total people in 2011 = `r sum(census$pop_all_2011)`
+* Total working population in 2011 = `r sum(census$pop_working_all_2011)`
+* Ag/for/fish working population in 2011 = `r round(sum(census$pop_working_land_2011))`
 * Proportion in land/primary of total population in 2011 = `r scales::percent(sum(census$pop_working_land_2011) / sum(census$pop_all_2011))`
 * Proportion in land/primary of working population in 2011 = `r scales::percent(sum(census$pop_working_land_2011) / sum(census$pop_working_all_2011))`
 
-### Using raw census output areas
+### Using census output areas
+
+These values are the benchmark, as they are unaltered from the downloaded versions.
 
 ```{r census OAs}
 census_OA = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/census2011.csv") %>%
@@ -139,10 +136,22 @@ census_spatial = tidy(census_spatial) %>%
 ```
 
 * Total people in 2011 = `r sum(census_OA$pop_all_2011)`
+* Total working population in 2011 = `r sum(census_OA$pop_working_all_2011)`
+* Ag/for/fish working population in 2011 = `r round(sum(census_OA$pop_working_land_2011))`
 * Proportion in land/primary of total population in 2011 = `r scales::percent(sum(census_OA$pop_working_land_2011) / sum(census_OA$pop_all_2011))`
 * Proportion in land/primary of working population in 2011 = `r scales::percent(sum(census_OA$pop_working_land_2011) / sum(census_OA$pop_working_all_2011))`
 
-Aggregation is causing inflation in certain areas. Likely due to rounding error, where proportions of a person are increased to the next whole number.
+Aggregation is causing inflation in certain areas. Likely due to rounding error, where proportions of a person are increased to the nearest whole number. These errors are very small across the whole of Scotland, but may have impact in isolated parishes.
+
+### Differences between ag parishes and census OA
+
+Using the census data as a benchmark, census data have been subtracted from aggregated data. Hence negative values mean aggregated data are less than the census output area data.
+
+* Total people in 2011 = `r sum(census$pop_all_2011) - sum(census_OA$pop_all_2011)`
+* Total working population in 2011 = `r sum(census$pop_working_all_2011) - sum(census_OA$pop_working_all_2011)`
+* Ag/for/fish working population in 2011 = `r round(sum(census$pop_working_land_2011) - sum(census_OA$pop_working_land_2011))`
+
+## Maps of census output areas
 
 ```{r census map}
 ggplot(census_spatial, aes(long, lat, group=group)) +
