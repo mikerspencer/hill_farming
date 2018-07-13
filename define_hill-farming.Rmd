@@ -56,15 +56,11 @@ Incorporating slope into a measure of hill farming would help overcome using onl
 
 There are many datasets available which we can use to further form an idea of hill farming areas. We have collected data from a variety of sources to help define hill farming:
 
-* Urban/rural classification: <http://www.gov.scot/Publications/2018/03/6040/downloads>
 * Elevation (including derived slope): <https://www.ordnancesurvey.co.uk/business-and-government/products/terrain-50.html>
 * Scottish Natural Heritage (SNH) Landscape Character Assessment (LCA): <https://gateway.snh.gov.uk/natural-spaces/>
-* SNH Wild land: <https://gateway.snh.gov.uk/natural-spaces/>
-* SNH National Nature Reserves (NNR): <https://gateway.snh.gov.uk/natural-spaces/>
 * SNH Carbon and Peatland map: <https://gateway.snh.gov.uk/natural-spaces/>
 * James Hutton Institute (JHI) Land capability for agriculture: <http://www.hutton.ac.uk/learning/natural-resource-datasets>
-* JHI Land capability for forestry: <http://www.hutton.ac.uk/learning/natural-resource-datasets>
-* Agricultural census common grazing: RESAS
+* Agricultural census common and rough grazing: RESAS
 
 ```{r data load}
 restrictions = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/parish_restrictions.csv") %>% 
