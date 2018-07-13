@@ -103,6 +103,27 @@ plot.map("pop_working_all_2011", "2011 working\npopulation")
 plot.map("pop_working_land_2011", "2011 working in\nprimary production\npopulation")
 ```
 
+### JHI LCA Land capability for forestry
+
+The James Hutton Institute produce a land capability index for forestry.
+They have classified areas of Scotland according to the challenge of timber growth, these classes are:
+
+* Class F1. Land with excellent flexibility for the growth and management of tree crops.
+* Class F2. Land with very good flexibility for the growth and management of tree crops.
+* Class F3. Land with good flexibility for the growth and management of tree crops.
+* Class F4. Land with moderate flexibility for the growth and management of tree crops.
+* Class F5. Land with limited flexibility for the growth and management of tree crops.
+* Class F6. Land with very limited flexibility for the growth and management of tree crops.
+* Class F7. Land unsuitable for producing tree crops.
+
+Areas classified as F6 or F7 were aggregated and the proportion contained within each parish calculated.
+These proportions are presented below, where North West Scotland and the Cairngorms have the highest proportion of land where forestry is a challenge.
+
+```{r JHI_lcf, fig.cap="Map of parish JHI forest capability proportion"}
+plot.map("land_cap_forest_prop", "Forestry\nF6 & F7\nProportion")
+```
+
+
 Note that these results may be skewed by an issue with island polygons.
 
 ## Proportions for agricultural parishes
