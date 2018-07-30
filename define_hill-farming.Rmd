@@ -179,6 +179,8 @@ plot.map("c_grazing_prop", "Common\ngrazing\nproportion")
 
 #### Rough
 
+Rough grazing areas were taken from the June Agricultural Census (2011).
+
 ```{r rough_grazing, fig.cap="Map of parish common grazing proportion"}
 plot.map("r_grazing_prop", "Rough\ngrazing\nproportion")
 ```
