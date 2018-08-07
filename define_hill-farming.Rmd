@@ -461,3 +461,13 @@ parishes %>%
    theme_bw() +
    theme(line=element_blank())
 ```
+
+
+
+```{r export}
+restrictions %>% 
+   select(PARCode, cluster2) %>% 
+   left_join(score) %>% 
+   write_csv("~/Cloud/Michael/SRUC/hill_farms/data/hilliness.csv")
+```
+
