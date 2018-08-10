@@ -12,6 +12,7 @@ library(broom)
 library(tidyverse)
 library(viridis)
 library(knitr)
+options(scipen = 999)
 ```
 
 
@@ -112,8 +113,8 @@ prop.map("pop_working_land_2011", "pop_working_all_2011", "Proportion of\nworkin
 
 ### Aggregated to agricultural parishes
 
-* Total people in 2011 = `r sum(census$pop_all_2011)`
-* Total working population in 2011 = `r sum(census$pop_working_all_2011)`
+* Total people in 2011 = `r round(sum(census$pop_all_2011))`
+* Total working population in 2011 = `r round(sum(census$pop_working_all_2011))`
 * Ag/for/fish working population in 2011 = `r round(sum(census$pop_working_land_2011))`
 * Proportion in land/primary of total population in 2011 = `r scales::percent(sum(census$pop_working_land_2011) / sum(census$pop_all_2011))`
 * Proportion in land/primary of working population in 2011 = `r scales::percent(sum(census$pop_working_land_2011) / sum(census$pop_working_all_2011))`
@@ -137,7 +138,7 @@ census_spatial = tidy(census_spatial) %>%
 
 * Total people in 2011 = `r sum(census_OA$pop_all_2011)`
 * Total working population in 2011 = `r sum(census_OA$pop_working_all_2011)`
-* Ag/for/fish working population in 2011 = `r round(sum(census_OA$pop_working_land_2011))`
+* Ag/for/fish working population in 2011 = `r sum(census_OA$pop_working_land_2011)`
 * Proportion in land/primary of total population in 2011 = `r scales::percent(sum(census_OA$pop_working_land_2011) / sum(census_OA$pop_all_2011))`
 * Proportion in land/primary of working population in 2011 = `r scales::percent(sum(census_OA$pop_working_land_2011) / sum(census_OA$pop_working_all_2011))`
 
@@ -147,8 +148,8 @@ Aggregation is causing inflation in certain areas. Likely due to rounding error,
 
 Using the census data as a benchmark, census data have been subtracted from aggregated data. Hence negative values mean aggregated data are less than the census output area data.
 
-* Total people in 2011 = `r sum(census$pop_all_2011) - sum(census_OA$pop_all_2011)`
-* Total working population in 2011 = `r sum(census$pop_working_all_2011) - sum(census_OA$pop_working_all_2011)`
+* Total people in 2011 = `r round(sum(census$pop_all_2011) - sum(census_OA$pop_all_2011))`
+* Total working population in 2011 = `r round(sum(census$pop_working_all_2011) - sum(census_OA$pop_working_all_2011))`
 * Ag/for/fish working population in 2011 = `r round(sum(census$pop_working_land_2011) - sum(census_OA$pop_working_land_2011))`
 
 ## Maps of census output areas

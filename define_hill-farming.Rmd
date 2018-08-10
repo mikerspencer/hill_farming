@@ -179,6 +179,8 @@ plot.map("c_grazing_prop", "Common\ngrazing\nproportion")
 
 #### Rough
 
+Rough grazing areas were taken from the June Agricultural Census (2011).
+
 ```{r rough_grazing, fig.cap="Map of parish common grazing proportion"}
 plot.map("r_grazing_prop", "Rough\ngrazing\nproportion")
 ```
@@ -459,3 +461,13 @@ parishes %>%
    theme_bw() +
    theme(line=element_blank())
 ```
+
+
+
+```{r export}
+restrictions %>% 
+   select(PARCode, cluster2) %>% 
+   left_join(score) %>% 
+   write_csv("~/Cloud/Michael/SRUC/hill_farms/data/hilliness.csv")
+```
+
