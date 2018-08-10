@@ -90,7 +90,7 @@ areas_2001 = read_csv("projects/hill_farming/data/OutputAreas2001_parishes.csv")
           pop_working_service_2001=pop_working_service_2001 * area_prop) %>% 
    select(-OutputAreas2001_area, -a_OutputAreas2001_t_area, -area_prop, -TAG) %>% 
    group_by(PARCode, PARName) %>% 
-   summarise_all(sum)
+   summarise_all(sum, na.rm=T)
 
 # Joining to polygons removes Scotland row from census
 areas_2011 = read_csv("projects/hill_farming/data/OutputArea2011_MHW_parishes.csv") %>% 
