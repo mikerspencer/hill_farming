@@ -192,3 +192,40 @@ ggplot(census_spatial, aes(long, lat, group=group)) +
             line=element_blank())
 ```
 
+
+## Compared to historic parishes
+
+```{r parish data}
+civ_parish_2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/civil_parish/KS605SC.csv", skip=4, na="-") %>% 
+   rename(parish=X1,
+          all=`All people aged 16 to 74 in employment`,                             
+          A_agri=`A. Agriculture, forestry and fishing`,
+          B_mining=`B. Mining and quarrying`,
+          C_manufacture=`C. Manufacturing`,
+          D_utility=`D. Electricity, gas, steam and air conditioning supply`,
+          E_water=`E. Water supply, sewerage, waste management and remediation activities`,
+          F_constr=`F. Construction`,
+          G_retail=`G. Wholesale and retail trade, repair of motor vehicles and motorcycles`,
+          H_transport=`H. Transport and storage`,
+          I_accommo=`I. Accommodation and food service activities`,
+          J_IT=`J. Information and communication`,
+          K_finance=`K. Financial and insurance activities`,
+          L_estate=`L. Real estate activities`,
+          M_science=`M. Professional, scientific and technical activities`,
+          N_admin=`N. Administrative and support service activities`,
+          O_public=`O. Public administration and defence, compulsory social security`,
+          P_edu=`P. Education`,
+          Q_health=`Q. Human health and social work activities`,
+          other=`R, S, T, U. Other`) %>% 
+   mutate_all(funs(replace(., is.na(.), 0))) %>% 
+   filter(parish!="Scotland")
+```
+
+```{r ag2civ parishes}
+
+```
+
+```{r civ parish change}
+
+```
+
