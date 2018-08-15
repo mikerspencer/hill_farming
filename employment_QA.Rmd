@@ -195,6 +195,8 @@ ggplot(census_spatial, aes(long, lat, group=group)) +
 
 ## Compared to historic parishes
 
+Used here are employment figures.
+
 ```{r parish data}
 civ_parish_2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/civil_parish/KS605SC.csv", skip=4, na="-") %>% 
    rename(parish=X1,
@@ -204,7 +206,7 @@ civ_parish_2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/civil_pa
           C_manufacture=`C. Manufacturing`,
           D_utility=`D. Electricity, gas, steam and air conditioning supply`,
           E_water=`E. Water supply, sewerage, waste management and remediation activities`,
-          F_constr=`F. Construction`,
+          F_construction=`F. Construction`,
           G_retail=`G. Wholesale and retail trade, repair of motor vehicles and motorcycles`,
           H_transport=`H. Transport and storage`,
           I_accommo=`I. Accommodation and food service activities`,
@@ -218,6 +220,41 @@ civ_parish_2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/civil_pa
           Q_health=`Q. Human health and social work activities`,
           other=`R, S, T, U. Other`) %>% 
    mutate_all(funs(replace(., is.na(.), 0))) %>% 
+   mutate(A_agri=100*A_agri/all,
+          B_mining=100*B_mining/all,
+          C_manufacture=100*C_manufacture/all,
+          D_utility=100*D_utility/all,
+          E_water=100*E_water/all,
+          F_construction=100*F_construction/all,
+          G_retail=100*G_retail/all,
+          H_transport=100*H_transport/all,
+          I_accommo=100*I_accommo/all,
+          J_IT=100*J_IT/all,
+          K_finance=100*K_finance/all,
+          L_estate=100*L_estate/all,
+          M_science=100*M_science/all,
+          N_admin=100*N_admin/all,
+          O_public=100*O_public/all) %>% 
+   filter(parish!="Scotland")
+
+civ_parish_2001 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/civil_parish/KS11a.csv", skip=5, na="-") %>% 
+   transmute(parish=X1,
+          all=`All people aged 16 to 74 in employment`,                             
+          A_agri=`Percentage of people aged 16 to 74 working in: Agriculture, hunting and forestry` + `Percentage of people aged 16 to 74 working in: Fishing`,
+          B_mining=`Percentage of people aged 16 to 74 working in: Mining and quarrying`,
+          C_manufacture=`Percentage of people aged 16 to 74 working in: Manufacturing`,
+          D_utility=`Percentage of people aged 16 to 74 working in: Electricity, gas and water supply`,
+          F_constr=`Percentage of people aged 16 to 74 working in: Construction`,
+          G_retail=`Percentage of people aged 16 to 74 working in: Wholesale and retail trade, repairs`,
+          H_transport=`Percentage of people aged 16 to 74 working in: Transport, storage and communications`,
+          I_accommo=`Percentage of people aged 16 to 74 working in: Hotels and restaurants`,
+          K_finance=`Percentage of people aged 16 to 74 working as: Financial intermediaries`,
+          L_estate=`Percentage of people aged 16 to 74 working in: Real estate, renting and business activities`,
+          O_public=`Percentage of people aged 16 to 74 working in: Public administration and defence, social security`,
+          P_edu=`Percentage of people aged 16 to 74 working in: Education`,
+          Q_health=`Percentage of people aged 16 to 74 working in: Health and social work`,
+          other=`Percentage of people aged 16 to 74 working in: Other`) %>% 
+   mutate_all(funs(replace(., is.na(.), 0))) %>% 
    filter(parish!="Scotland")
 ```
 
@@ -226,6 +263,20 @@ civ_parish_2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/civil_pa
 ```
 
 ```{r civ parish change}
+x = civ_parish_2001 %>% 
+   select(parish, all) %>% 
+   inner_join(select(civ_parish_2011, parish, all), by=c("parish"="parish")) %>% 
+   mutate(diff=100*all.x/all.y)
 
+ggplot(x, aes(diff)) +
+   geom_histogram()
+
+
+civ_parish_2001 %>% 
+   select(parish, A_agri) %>% 
+   inner_join(select(civ_parish_2011, parish, A_agri), by=c("parish"="parish")) %>% 
+   mutate(diff=A_agri.y-A_agri.x) %>% 
+   ggplot(aes(diff)) +
+   geom_histogram()
 ```
 
