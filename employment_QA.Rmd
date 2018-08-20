@@ -257,6 +257,12 @@ civ_parish_2001 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/civil_pa
           other=`Percentage of people aged 16 to 74 working in: Other`) %>% 
    mutate_all(funs(replace(., is.na(.), 0))) %>% 
    filter(parish!="Scotland")
+
+civ_parish = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial"), "CivilParish1930")
+
+civ_parish$id = row.names(civ_parish)
+civ_parish = tidy(civ_parish) %>% 
+   left_join(civ_parish@data)
 ```
 
 ### 2001 and 2011 census sic match
@@ -320,23 +326,70 @@ plot.civ=function(colu, tit){
            y="Number of parishes")   
 }
 
+map.civ = function(colu, tit){
    x = civ_parish_2001 %>% 
-      inner_join(civ_parish_2011, by=c("parish"="parish"))
+   inner_join(civ_parish_2011, by=c("parish"="parish")) %>% 
+   rename_(col2001=paste0(colu, ".x"),
+           col2011=paste0(colu, ".y")) %>% 
+   mutate(diff=(col2011-col2001)/100) %>% 
+   select(parish, diff)
+
+civ_parish %>% 
+   left_join(x, by=c("name"="parish")) %>% 
+   ggplot(aes(long, lat, group=group)) +
+      geom_polygon(aes(fill=diff)) +
+      geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+      coord_equal() +
+      scale_fill_distiller(type="div",
+                           direction=1,
+                           labels=scales::percent,
+                           limits=c(-0.5, 0.5)) +
+      labs(title=tit,
+           fill="Percentage\nchange") +
+      theme_minimal() +
+      theme(axis.text=element_blank(),
+            axis.title=element_blank(),
+            line=element_blank())
+}
 ```
 
 ```{r civ parish change sector}
-plot.civ("A_agri", "Employed in agriculture, forestry or fishing")
-plot.civ("B_mining", "Employed in mining and quarrying")
-plot.civ("C_manufacture", "Employed in manufacturing")
-plot.civ("F_construction", "Employed in construction")
-plot.civ("G_retail", "Employed in wholesale and retail trade, repairs")
-plot.civ("I_accommo", "Employed in hotels and restaurants")
-plot.civ("K_finance", "Employed in finance")
-plot.civ("L_estate", "Employed in real estate")
-plot.civ("O_public", "Employed in public sector")
-plot.civ("P_edu", "Employed in education")
-plot.civ("Q_health", "Employed in health and social sector")
-plot.civ("other", "Employed in other")
+plot.civ("A_agri", "Employed in agriculture, forestry or fishing") +
+   map.civ("A_agri", "")
+
+plot.civ("B_mining", "Employed in mining and quarrying") +
+   map.civ("B_mining", "")
+
+plot.civ("C_manufacture", "Employed in manufacturing") +
+   map.civ("C_manufacture", "")
+
+plot.civ("F_construction", "Employed in construction") +
+   map.civ("F_construction", "")
+
+plot.civ("G_retail", "Employed in wholesale and retail trade, repairs") +
+   map.civ("G_retail", "")
+
+plot.civ("I_accommo", "Employed in hotels and restaurants") +
+   map.civ("I_accommo", "")
+
+plot.civ("K_finance", "Employed in finance") +
+   map.civ("K_finance", "")
+
+plot.civ("L_estate", "Employed in real estate") +
+   map.civ("L_estate", "")
+
+plot.civ("O_public", "Employed in public sector") +
+   map.civ("O_public", "")
+
+plot.civ("P_edu", "Employed in education") +
+   map.civ("P_edu", "")
+
+plot.civ("Q_health", "Employed in health and social sector") +
+   map.civ("Q_health", "")
+
+plot.civ("other", "Employed in other") +
+   map.civ("other", "")
 ```
 
 
