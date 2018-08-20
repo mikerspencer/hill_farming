@@ -244,7 +244,7 @@ civ_parish_2001 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/civil_pa
           B_mining=`Percentage of people aged 16 to 74 working in: Mining and quarrying`,
           C_manufacture=`Percentage of people aged 16 to 74 working in: Manufacturing`,
           D_utility=`Percentage of people aged 16 to 74 working in: Electricity, gas and water supply`,
-          F_constr=`Percentage of people aged 16 to 74 working in: Construction`,
+          F_construction=`Percentage of people aged 16 to 74 working in: Construction`,
           G_retail=`Percentage of people aged 16 to 74 working in: Wholesale and retail trade, repairs`,
           H_transport=`Percentage of people aged 16 to 74 working in: Transport, storage and communications`,
           I_accommo=`Percentage of people aged 16 to 74 working in: Hotels and restaurants`,
@@ -258,25 +258,87 @@ civ_parish_2001 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/civil_pa
    filter(parish!="Scotland")
 ```
 
+### 2001 and 2011 census sic match
+
+Not all census sic codes match, this is how they have been joined:
+
+* A_agri=`Percentage of people aged 16 to 74 working in: Agriculture, hunting and forestry` + `Percentage of people aged 16 to 74 working in: Fishing`,
+* B_mining=`Percentage of people aged 16 to 74 working in: Mining and quarrying`,
+* C_manufacture=`Percentage of people aged 16 to 74 working in: Manufacturing`,
+* F_construction=`Percentage of people aged 16 to 74 working in: Construction`,
+* G_retail=`Percentage of people aged 16 to 74 working in: Wholesale and retail trade, repairs`,
+* I_accommo=`Percentage of people aged 16 to 74 working in: Hotels and restaurants`,
+* K_finance=`Percentage of people aged 16 to 74 working as: Financial intermediaries`,
+* L_estate=`Percentage of people aged 16 to 74 working in: Real estate, renting and business activities`,
+* O_public=`Percentage of people aged 16 to 74 working in: Public administration and defence, social security`,
+* P_edu=`Percentage of people aged 16 to 74 working in: Education`,
+* Q_health=`Percentage of people aged 16 to 74 working in: Health and social work`,
+* other=`Percentage of people aged 16 to 74 working in: Other`)
+
+### Civil parish change
+
+How has employment changed in civil parishes between the 2001 and 2011 census?
+
+```{r civ parish change}
+civ_parish_2001 %>% 
+   select(parish, all) %>% 
+   inner_join(select(civ_parish_2011, parish, all), by=c("parish"="parish")) %>% 
+   mutate(diff=all.x/all.y) %>% 
+   ggplot(aes(diff)) +
+   geom_histogram() +
+   scale_x_continuous(labels=scales::percent) +
+   labs(title="Employment in civil parishes (aged 16-74)",
+        subtitle="Histogram of percentage change from 2001 to 2011",
+        x="",
+        y="Number of parishes")
+```
+
+```{r civil functions}
+plot.civ=function(colu, tit){
+   x = civ_parish_2001 %>% 
+      inner_join(civ_parish_2011, by=c("parish"="parish")) %>% 
+      rename_(col2001=paste0(colu, ".x"),
+              col2011=paste0(colu, ".y")) %>% 
+   transmute(diff=(col2011-col2001)/100)
+   
+   civ_parish_2001 %>% 
+      inner_join(civ_parish_2011, by=c("parish"="parish")) %>% 
+      rename_(col2001=paste0(colu, ".x"),
+              col2011=paste0(colu, ".y")) %>% 
+      transmute(diff=(col2011-col2001)/100) %>% 
+      ggplot(aes(diff)) +
+      geom_histogram() +
+      scale_x_continuous(labels=scales::percent) +
+      labs(title=tit,
+           subtitle=paste("Percentage change from 2001 to 2011 |",
+                          sum(x>0),
+                           "of",
+                          nrow(x),
+                           "parishes increase"),
+           x="",
+           y="Number of parishes")   
+}
+
+   x = civ_parish_2001 %>% 
+      inner_join(civ_parish_2011, by=c("parish"="parish"))
+```
+
+```{r civ parish change sector}
+plot.civ("A_agri", "Employed in agriculture, forestry or fishing")
+plot.civ("B_mining", "Employed in mining and quarrying")
+plot.civ("C_manufacture", "Employed in manufacturing")
+plot.civ("F_construction", "Employed in construction")
+plot.civ("G_retail", "Employed in wholesale and retail trade, repairs")
+plot.civ("I_accommo", "Employed in hotels and restaurants")
+plot.civ("K_finance", "Employed in finance")
+plot.civ("L_estate", "Employed in real estate")
+plot.civ("O_public", "Employed in public sector")
+plot.civ("P_edu", "Employed in education")
+plot.civ("Q_health", "Employed in health and social sector")
+plot.civ("other", "Employed in other")
+```
+
+
 ```{r ag2civ parishes}
 
 ```
-
-```{r civ parish change}
-x = civ_parish_2001 %>% 
-   select(parish, all) %>% 
-   inner_join(select(civ_parish_2011, parish, all), by=c("parish"="parish")) %>% 
-   mutate(diff=100*all.x/all.y)
-
-ggplot(x, aes(diff)) +
-   geom_histogram()
-
-
-civ_parish_2001 %>% 
-   select(parish, A_agri) %>% 
-   inner_join(select(civ_parish_2011, parish, A_agri), by=c("parish"="parish")) %>% 
-   mutate(diff=A_agri.y-A_agri.x) %>% 
-   ggplot(aes(diff)) +
-   geom_histogram()
-```
-
