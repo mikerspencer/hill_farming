@@ -381,18 +381,71 @@ plot.civ("L_estate", "Employed in real estate") +
 
 plot.civ("O_public", "Employed in public sector") +
    map.civ("O_public", "")
+```
 
-plot.civ("P_edu", "Employed in education") +
-   map.civ("P_edu", "")
+### Comparing agricultural and civic parishes
 
-plot.civ("Q_health", "Employed in health and social sector") +
-   map.civ("Q_health", "")
+```{r ag2civ parishes all employment}
+x = census %>% 
+   inner_join(civ_parish_2001, by=c("PARName"="parish")) %>% 
+   inner_join(civ_parish_2011, by=c("PARName"="parish"))
 
-plot.civ("other", "Employed in other") +
-   map.civ("other", "")
+x %>% 
+   mutate(diff2001=(pop_working_all_2001 - all.x)) %>% 
+   ggplot(aes(pop_working_all_2001, all.x)) +
+   geom_point() +
+   geom_abline(slope=1) +
+   geom_text(aes(label=ifelse(!between(diff2001, -1000, 1000), 
+                              as.character(PARName), "")),
+             hjust=0, vjust=0) +
+   labs(title="Those aged 16-74 in employment by parish",
+        subtitle="2001",
+        x="Aggregated to agricultural parishes",
+        y="Downloaded for civic parishes") +
+   ggplot(x, aes(pop_working_all_2011, all.y)) +
+   geom_point() +
+   geom_abline(slope=1) +
+   labs(title="",
+        subtitle="2011",
+        x="Aggregated to agricultural parishes",
+        y="")
+```
+
+There are two agricultural parishes called Cathcart, when their populations are added together they sum to the population of the civic parish with the same name.
+
+Total working population in 2011 for aggregated agricultural parishes is `r sum(census$pop_working_all_2011)` people and for civic parishes `r sum(civ_parish_2011$all)` people.
+
+```{r ag2civ parishes land employment}
+x = census %>% 
+   inner_join(civ_parish_2001, by=c("PARName"="parish")) %>% 
+   inner_join(civ_parish_2011, by=c("PARName"="parish"))
+
+y = x %>% 
+   mutate(prop2001=100 * pop_working_land_2001/pop_working_all_2001,
+          prop2011=100 * pop_working_land_2011/pop_working_all_2011,
+          diff2001=(prop2001 - A_agri.x))
+
+ggplot(y, aes(prop2001, A_agri.x)) +
+   geom_point() +
+   geom_abline(slope=1) +
+   geom_text(aes(label=ifelse(!between(diff2001, -1000, 1000), 
+                              as.character(PARName), "")),
+             hjust=0, vjust=0) +
+   labs(title="Those aged 16-74 in agriculture, forestry or fishing employment by parish",
+        subtitle="2001",
+        x="Aggregated to agricultural parishes",
+        y="Downloaded for civic parishes") +
+   ggplot(y, aes(prop2011, A_agri.y)) +
+   geom_point() +
+   geom_abline(slope=1) +
+   labs(title="",
+        subtitle="2011",
+        x="Aggregated to agricultural parishes",
+        y="")
 ```
 
 
-```{r ag2civ parishes}
+The working in agriculture population for aggregated parishes is `r sum(census$pop_working_land_2011)` people and for civic parishes `r sum(civ_parish_2011$A_agri/100 * civ_parish_2011$all, na.rm=T)` people.
+compare them to the census output area value, which is `r sum(census_OA$pop_working_land_2011)`.
 
-```
+compare civic and ag parish sizes.
