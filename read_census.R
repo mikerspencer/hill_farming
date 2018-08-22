@@ -18,7 +18,6 @@ KS11a = read_csv("projects/hill_farming/data/KS11a.csv", skip=5)
 # population
 KS101SC = read_csv("projects/hill_farming/data/KS101SC.csv", skip=4)
 KS102SC = read_csv("projects/hill_farming/data/KS101SC.csv", skip=4)
-
 KS605SC = read_csv("projects/hill_farming/data/KS605SC.csv", skip=4)
 
 
@@ -42,6 +41,12 @@ census_2001 = KS01 %>%
           pop_working_public=as.numeric(str_replace(pop_working_public, "-", "0")),
           pop_working_ed=as.numeric(str_replace(pop_working_ed, "-", "0")),
           pop_working_health=as.numeric(str_replace(pop_working_health, "-", "0"))) %>% 
+   mutate(pop_working_ag_2001=pop_working_ag_2001 / 100 * pop_all_2001,
+          pop_working_fish_2001=pop_working_fish_2001 / 100 * pop_all_2001,
+          pop_working_utilities=pop_working_utilities / 100 * pop_all_2001,
+          pop_working_public=pop_working_public / 100 * pop_all_2001,
+          pop_working_ed=pop_working_ed / 100 * pop_all_2001,
+          pop_working_health=pop_working_health / 100 * pop_all_2001) %>% 
    mutate(pop_working_land_2001=pop_working_ag_2001 + pop_working_fish_2001,
           pop_working_service_2001=pop_working_utilities + pop_working_public + pop_working_ed + pop_working_health) %>% 
    select(-pop_working_ag_2001, -pop_working_fish_2001, -pop_working_utilities, -pop_working_public, -pop_working_ed, -pop_working_health)
