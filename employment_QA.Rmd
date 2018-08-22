@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo=F, message=F)
 library(rgdal)
 library(broom)
 library(tidyverse)
+library(patchwork)
 library(viridis)
 library(knitr)
 options(scipen = 999)
@@ -192,3 +193,259 @@ ggplot(census_spatial, aes(long, lat, group=group)) +
             line=element_blank())
 ```
 
+
+## Compared to historic parishes
+
+Used here are employment figures.
+
+```{r parish data}
+civ_parish_2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/civil_parish/KS605SC.csv", skip=4, na="-") %>% 
+   rename(parish=X1,
+          all=`All people aged 16 to 74 in employment`,                             
+          A_agri=`A. Agriculture, forestry and fishing`,
+          B_mining=`B. Mining and quarrying`,
+          C_manufacture=`C. Manufacturing`,
+          D_utility=`D. Electricity, gas, steam and air conditioning supply`,
+          E_water=`E. Water supply, sewerage, waste management and remediation activities`,
+          F_construction=`F. Construction`,
+          G_retail=`G. Wholesale and retail trade, repair of motor vehicles and motorcycles`,
+          H_transport=`H. Transport and storage`,
+          I_accommo=`I. Accommodation and food service activities`,
+          J_IT=`J. Information and communication`,
+          K_finance=`K. Financial and insurance activities`,
+          L_estate=`L. Real estate activities`,
+          M_science=`M. Professional, scientific and technical activities`,
+          N_admin=`N. Administrative and support service activities`,
+          O_public=`O. Public administration and defence, compulsory social security`,
+          P_edu=`P. Education`,
+          Q_health=`Q. Human health and social work activities`,
+          other=`R, S, T, U. Other`) %>% 
+   mutate_all(funs(replace(., is.na(.), 0))) %>% 
+   mutate(A_agri=100*A_agri/all,
+          B_mining=100*B_mining/all,
+          C_manufacture=100*C_manufacture/all,
+          D_utility=100*D_utility/all,
+          E_water=100*E_water/all,
+          F_construction=100*F_construction/all,
+          G_retail=100*G_retail/all,
+          H_transport=100*H_transport/all,
+          I_accommo=100*I_accommo/all,
+          J_IT=100*J_IT/all,
+          K_finance=100*K_finance/all,
+          L_estate=100*L_estate/all,
+          M_science=100*M_science/all,
+          N_admin=100*N_admin/all,
+          O_public=100*O_public/all) %>% 
+   filter(parish!="Scotland")
+
+civ_parish_2001 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/civil_parish/KS11a.csv", skip=5, na="-") %>% 
+   transmute(parish=X1,
+          all=`All people aged 16 to 74 in employment`,                             
+          A_agri=`Percentage of people aged 16 to 74 working in: Agriculture, hunting and forestry` + `Percentage of people aged 16 to 74 working in: Fishing`,
+          B_mining=`Percentage of people aged 16 to 74 working in: Mining and quarrying`,
+          C_manufacture=`Percentage of people aged 16 to 74 working in: Manufacturing`,
+          D_utility=`Percentage of people aged 16 to 74 working in: Electricity, gas and water supply`,
+          F_construction=`Percentage of people aged 16 to 74 working in: Construction`,
+          G_retail=`Percentage of people aged 16 to 74 working in: Wholesale and retail trade, repairs`,
+          H_transport=`Percentage of people aged 16 to 74 working in: Transport, storage and communications`,
+          I_accommo=`Percentage of people aged 16 to 74 working in: Hotels and restaurants`,
+          K_finance=`Percentage of people aged 16 to 74 working as: Financial intermediaries`,
+          L_estate=`Percentage of people aged 16 to 74 working in: Real estate, renting and business activities`,
+          O_public=`Percentage of people aged 16 to 74 working in: Public administration and defence, social security`,
+          P_edu=`Percentage of people aged 16 to 74 working in: Education`,
+          Q_health=`Percentage of people aged 16 to 74 working in: Health and social work`,
+          other=`Percentage of people aged 16 to 74 working in: Other`) %>% 
+   mutate_all(funs(replace(., is.na(.), 0))) %>% 
+   filter(parish!="Scotland")
+
+civ_parish = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial"), "CivilParish1930")
+
+civ_parish$id = row.names(civ_parish)
+civ_parish = tidy(civ_parish) %>% 
+   left_join(civ_parish@data)
+```
+
+### 2001 and 2011 census sic match
+
+Not all census sic codes match, this is how they have been joined:
+
+* A_agri=`Percentage of people aged 16 to 74 working in: Agriculture, hunting and forestry` + `Percentage of people aged 16 to 74 working in: Fishing`,
+* B_mining=`Percentage of people aged 16 to 74 working in: Mining and quarrying`,
+* C_manufacture=`Percentage of people aged 16 to 74 working in: Manufacturing`,
+* F_construction=`Percentage of people aged 16 to 74 working in: Construction`,
+* G_retail=`Percentage of people aged 16 to 74 working in: Wholesale and retail trade, repairs`,
+* I_accommo=`Percentage of people aged 16 to 74 working in: Hotels and restaurants`,
+* K_finance=`Percentage of people aged 16 to 74 working as: Financial intermediaries`,
+* L_estate=`Percentage of people aged 16 to 74 working in: Real estate, renting and business activities`,
+* O_public=`Percentage of people aged 16 to 74 working in: Public administration and defence, social security`,
+* P_edu=`Percentage of people aged 16 to 74 working in: Education`,
+* Q_health=`Percentage of people aged 16 to 74 working in: Health and social work`,
+* other=`Percentage of people aged 16 to 74 working in: Other`)
+
+### Civil parish change
+
+How has employment changed in civil parishes between the 2001 and 2011 census?
+
+```{r civ parish change}
+civ_parish_2001 %>% 
+   select(parish, all) %>% 
+   inner_join(select(civ_parish_2011, parish, all), by=c("parish"="parish")) %>% 
+   mutate(diff=all.x/all.y) %>% 
+   ggplot(aes(diff)) +
+   geom_histogram() +
+   scale_x_continuous(labels=scales::percent) +
+   labs(title="Employment in civil parishes (aged 16-74)",
+        subtitle="Histogram of percentage change from 2001 to 2011",
+        x="",
+        y="Number of parishes")
+```
+
+```{r civil functions}
+plot.civ=function(colu, tit){
+   x = civ_parish_2001 %>% 
+      inner_join(civ_parish_2011, by=c("parish"="parish")) %>% 
+      rename_(col2001=paste0(colu, ".x"),
+              col2011=paste0(colu, ".y")) %>% 
+   transmute(diff=(col2011-col2001)/100)
+   
+   civ_parish_2001 %>% 
+      inner_join(civ_parish_2011, by=c("parish"="parish")) %>% 
+      rename_(col2001=paste0(colu, ".x"),
+              col2011=paste0(colu, ".y")) %>% 
+      transmute(diff=(col2011-col2001)/100) %>% 
+      ggplot(aes(diff)) +
+      geom_histogram() +
+      scale_x_continuous(labels=scales::percent) +
+      labs(title=tit,
+           subtitle=paste("Percentage change from 2001 to 2011 |",
+                          sum(x>0),
+                           "of",
+                          nrow(x),
+                           "parishes increase"),
+           x="",
+           y="Number of parishes")   
+}
+
+map.civ = function(colu, tit){
+   x = civ_parish_2001 %>% 
+   inner_join(civ_parish_2011, by=c("parish"="parish")) %>% 
+   rename_(col2001=paste0(colu, ".x"),
+           col2011=paste0(colu, ".y")) %>% 
+   mutate(diff=(col2011-col2001)/100) %>% 
+   select(parish, diff)
+
+civ_parish %>% 
+   left_join(x, by=c("name"="parish")) %>% 
+   ggplot(aes(long, lat, group=group)) +
+      geom_polygon(aes(fill=diff)) +
+      geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+      coord_equal() +
+      scale_fill_distiller(type="div",
+                           direction=1,
+                           labels=scales::percent,
+                           limits=c(-0.5, 0.5)) +
+      labs(title=tit,
+           fill="Percentage\nchange") +
+      theme_minimal() +
+      theme(axis.text=element_blank(),
+            axis.title=element_blank(),
+            line=element_blank())
+}
+```
+
+```{r civ parish change sector}
+plot.civ("A_agri", "Employed in agriculture, forestry or fishing") +
+   map.civ("A_agri", "")
+
+plot.civ("B_mining", "Employed in mining and quarrying") +
+   map.civ("B_mining", "")
+
+plot.civ("C_manufacture", "Employed in manufacturing") +
+   map.civ("C_manufacture", "")
+
+plot.civ("F_construction", "Employed in construction") +
+   map.civ("F_construction", "")
+
+plot.civ("G_retail", "Employed in wholesale and retail trade, repairs") +
+   map.civ("G_retail", "")
+
+plot.civ("I_accommo", "Employed in hotels and restaurants") +
+   map.civ("I_accommo", "")
+
+plot.civ("K_finance", "Employed in finance") +
+   map.civ("K_finance", "")
+
+plot.civ("L_estate", "Employed in real estate") +
+   map.civ("L_estate", "")
+
+plot.civ("O_public", "Employed in public sector") +
+   map.civ("O_public", "")
+```
+
+### Comparing agricultural and civic parishes
+
+```{r ag2civ parishes all employment}
+x = census %>% 
+   inner_join(civ_parish_2001, by=c("PARName"="parish")) %>% 
+   inner_join(civ_parish_2011, by=c("PARName"="parish"))
+
+x %>% 
+   mutate(diff2001=(pop_working_all_2001 - all.x)) %>% 
+   ggplot(aes(pop_working_all_2001, all.x)) +
+   geom_point() +
+   geom_abline(slope=1) +
+   geom_text(aes(label=ifelse(!between(diff2001, -1000, 1000), 
+                              as.character(PARName), "")),
+             hjust=0, vjust=0) +
+   labs(title="Those aged 16-74 in employment by parish",
+        subtitle="2001",
+        x="Aggregated to agricultural parishes",
+        y="Downloaded for civic parishes") +
+   ggplot(x, aes(pop_working_all_2011, all.y)) +
+   geom_point() +
+   geom_abline(slope=1) +
+   labs(title="",
+        subtitle="2011",
+        x="Aggregated to agricultural parishes",
+        y="")
+```
+
+There are two agricultural parishes called Cathcart, when their populations are added together they sum to the population of the civic parish with the same name.
+
+Total working population in 2011 for aggregated agricultural parishes is `r sum(census$pop_working_all_2011)` people and for civic parishes `r sum(civ_parish_2011$all)` people.
+
+```{r ag2civ parishes land employment}
+x = census %>% 
+   inner_join(civ_parish_2001, by=c("PARName"="parish")) %>% 
+   inner_join(civ_parish_2011, by=c("PARName"="parish"))
+
+y = x %>% 
+   mutate(prop2001=100 * pop_working_land_2001/pop_working_all_2001,
+          prop2011=100 * pop_working_land_2011/pop_working_all_2011,
+          diff2001=(prop2001 - A_agri.x))
+
+ggplot(y, aes(prop2001, A_agri.x)) +
+   geom_point() +
+   geom_abline(slope=1) +
+   geom_text(aes(label=ifelse(!between(diff2001, -1000, 1000), 
+                              as.character(PARName), "")),
+             hjust=0, vjust=0) +
+   labs(title="Those aged 16-74 in agriculture, forestry or fishing employment by parish",
+        subtitle="2001",
+        x="Aggregated to agricultural parishes",
+        y="Downloaded for civic parishes") +
+   ggplot(y, aes(prop2011, A_agri.y)) +
+   geom_point() +
+   geom_abline(slope=1) +
+   labs(title="",
+        subtitle="2011",
+        x="Aggregated to agricultural parishes",
+        y="")
+```
+
+
+The working in agriculture population for aggregated parishes is `r sum(census$pop_working_land_2011)` people and for civic parishes `r sum(civ_parish_2011$A_agri/100 * civ_parish_2011$all, na.rm=T)` people.
+compare them to the census output area value, which is `r sum(census_OA$pop_working_land_2011)`.
+
+compare civic and ag parish sizes.

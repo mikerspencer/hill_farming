@@ -10,10 +10,29 @@ knitr::opts_chunk$set(echo=F, message=F)
 library(rgdal)
 library(broom)
 library(tidyverse)
+library(ggmap)
 library(viridis)
 library(knitr)
 ```
 
+
+```{r functions}
+plot.map = function(dat, i, tit){
+   ggplot(dat, aes(long, lat, group=group)) +
+      geom_polygon(aes_string(fill=i)) +
+      geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+      coord_equal() +
+      scale_fill_distiller(palette="PRGn", direction=1,
+                           breaks=pretty_breaks(n=5),
+                           limits=c(-1, 1)) +
+      labs(fill=tit) +
+      theme_minimal() +
+      theme(axis.text=element_blank(),
+            axis.title=element_blank(),
+            line=element_blank())
+}
+```
 
 ## Introduction
 
@@ -36,16 +55,146 @@ hills = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/hilliness.csv")
 ag_census_2000 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/ag_census_2000.csv")
 ag_census_2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/ag_census_2011.csv")
 census = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/pop_census.csv")
-landscape = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/pop_census.csv")
+designations = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/designations.csv")
 
 # parishes = parishes %>% 
 #    left_join(census, by=c("PARCode"="PARCode", "PARName"="PARName")) %>% 
 #    mutate_all(funs(replace(., is.na(.), 0)))
 ```
 
-```{r }
+## Population census
 
+Population census data missing for some areas in 2001.
+Missing for some variables, but not others.
 
+### Population change
+
+```{r population change}
+hills %>% 
+   left_join(census) %>% 
+   ggplot(aes(score, pop_all_2011)) +
+   geom_point()
+
+hills %>% 
+   left_join(census) %>% 
+   mutate(perc_diff = (pop_all_2011 - pop_all_2001) / pop_all_2001) %>% 
+   ggplot(aes(score, perc_diff)) +
+   geom_point(alpha=0.25) +
+   scale_y_continuous(labels=scales::percent) +
+   labs(x="Hill score",
+        y="Percentage change between 2001 and 2011")
+
+x = hills %>% 
+   left_join(census) %>% 
+   mutate(perc_diff = (pop_all_2011 - pop_all_2001) / pop_all_2001) %>% 
+   select(PARCode, perc_diff)
+
+parishes %>% 
+   left_join(x) %>% 
+   plot.map("perc_diff", "Population change")
+```
+
+### Population working
+
+```{r population working}
+hills %>% 
+   left_join(census) %>% 
+   ggplot(aes(score, pop_working_all_2011)) +
+   geom_point()
+
+hills %>% 
+   left_join(census) %>% 
+   mutate(perc_diff = (pop_working_all_2011 - pop_working_all_2001) / pop_working_all_2001) %>% 
+   ggplot(aes(score, perc_diff)) +
+   geom_point(alpha=0.25) +
+   scale_y_continuous(labels=scales::percent) +
+   labs(x="Hill score",
+        y="Percentage change between 2001 and 2011")
+
+x = hills %>% 
+   left_join(census) %>% 
+   mutate(perc_diff = (pop_working_all_2011 - pop_working_all_2001) / pop_working_all_2001) %>% 
+   select(PARCode, perc_diff)
+
+parishes %>% 
+   left_join(x) %>% 
+   plot.map("perc_diff", "Population change")
+```
+
+### Public sector type work
+
+```{r population public}
+hills %>% 
+   left_join(census) %>% 
+   ggplot(aes(score, pop_working_service_2011)) +
+   geom_point()
+
+hills %>% 
+   left_join(census) %>% 
+   mutate(perc_diff = (pop_working_service_2011 - pop_working_service_2001) / pop_working_service_2001) %>% 
+   ggplot(aes(score, perc_diff)) +
+   geom_point(alpha=0.25) +
+   scale_y_continuous(labels=scales::percent) +
+   labs(x="Hill score",
+        y="Percentage change between 2001 and 2011")
+
+x = hills %>% 
+   left_join(census) %>% 
+   mutate(perc_diff = (pop_working_service_2011 - pop_working_service_2001) / pop_working_service_2001) %>% 
+   select(PARCode, perc_diff)
+
+parishes %>% 
+   left_join(x) %>% 
+   plot.map("perc_diff", "Population change")
+```
+
+### Primary production
+
+```{r primary production}
+hills %>% 
+   left_join(census) %>% 
+   ggplot(aes(score, pop_working_land_2011 / pop_working_all_2011)) +
+   geom_point()
+
+hills %>% 
+   left_join(census) %>% 
+   mutate(perc_diff = (pop_working_land_2011 - pop_working_land_2001) / pop_working_land_2001) %>% 
+   ggplot(aes(score, perc_diff)) +
+   geom_point(alpha=0.25) +
+   scale_y_continuous(labels=scales::percent) +
+   labs(x="Hill score",
+        y="Percentage change between 2001 and 2011")
+
+x = hills %>% 
+   left_join(census) %>% 
+   mutate(perc_diff = (pop_working_land_2011 - pop_working_land_2001) / pop_working_land_2001) %>% 
+   select(PARCode, perc_diff)
+
+parishes %>% 
+   left_join(x) %>% 
+   plot.map("perc_diff", "Population change")
+```
+
+### Primary production without public working
+
+```{r primary production}
+hills %>% 
+   left_join(census) %>% 
+   mutate(perc_diff = (pop_all_2011 - pop_all_2001) / pop_all_2001) %>% 
+   ggplot(aes(score, perc_diff)) +
+   geom_point(alpha=0.25) +
+   scale_y_continuous(labels=scales::percent) +
+   labs(x="Hill score",
+        y="Percentage change between 2001 and 2011")
+
+x = hills %>% 
+   left_join(census) %>% 
+   mutate(perc_diff = (pop_all_2011 - pop_all_2001) / pop_all_2001) %>% 
+   select(PARCode, perc_diff)
+
+parishes %>% 
+   left_join(x) %>% 
+   plot.map("perc_diff", "Population change")
 ```
 
 
