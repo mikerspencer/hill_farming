@@ -125,7 +125,9 @@ prop.map("pop_working_land_2011", "pop_working_all_2011", "Proportion of\nworkin
 These values are the benchmark, as they are unaltered from the downloaded versions.
 
 ```{r census OAs}
-census_OA = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/census2011.csv") %>%
+census_OA_2001 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/census_OA_2001.csv") %>%
+   filter(TAG!="Scotland")
+census_OA_2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/census_OA_2011.csv") %>%
    filter(census_id!="Scotland")
 
 census_spatial = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/", "OutputArea2011_MHW.shp"))
@@ -414,6 +416,7 @@ x %>%
 There are two agricultural parishes called Cathcart, when their populations are added together they sum to the population of the civic parish with the same name.
 
 Total working population in 2011 for aggregated agricultural parishes is `r sum(census$pop_working_all_2011)` people and for civic parishes `r sum(civ_parish_2011$all)` people.
+In 2001 the total working population for aggregated agricultural parishes is `r sum(census$pop_working_all_2001)` people and for civic parishes `r sum(civ_parish_2001$all)` people.
 
 ```{r ag2civ parishes land employment}
 x = census %>% 
@@ -431,7 +434,7 @@ ggplot(y, aes(prop2001, A_agri.x)) +
    geom_text(aes(label=ifelse(!between(diff2001, -1000, 1000), 
                               as.character(PARName), "")),
              hjust=0, vjust=0) +
-   labs(title="Those aged 16-74 in agriculture, forestry or fishing employment by parish",
+   labs(title="Percentage of those aged 16-74 in agriculture, forestry or fishing employment by parish",
         subtitle="2001",
         x="Aggregated to agricultural parishes",
         y="Downloaded for civic parishes") +
@@ -444,8 +447,17 @@ ggplot(y, aes(prop2001, A_agri.x)) +
         y="")
 ```
 
+SIC code A from 2011 was used as a base, but was different in 2001. I have aggregated two 2001 employment categories to create one broadly comparable to the SIC A of 2011.
+The working in agriculture/forestry/fishing population for aggregated parishes in 2011 is `r sum(census$pop_working_land_2011)` people and for civic parishes `r sum(civ_parish_2011$A_agri/100 * civ_parish_2011$all, na.rm=T)` people.
+compare them to the census output area value, which is `r sum(census_OA$pop_working_land_2011)` people.
+The same values for 2001 are: aggregated agricultural parishes, `r sum(census$pop_working_land_2001)`; civic parishes `r sum(civ_parish_2001$A_agri/100 * civ_parish_2001$all, na.rm=T)` people; `r sum(census_OA_2001$pop_working_land_2001)` people.
+The largest differences are between the civic parishes and the output areas/aggregated parishes for 2001.
 
-The working in agriculture population for aggregated parishes is `r sum(census$pop_working_land_2011)` people and for civic parishes `r sum(civ_parish_2011$A_agri/100 * civ_parish_2011$all, na.rm=T)` people.
-compare them to the census output area value, which is `r sum(census_OA$pop_working_land_2011)`.
+```{r}
+x=census %>%
+   left_join(civ_parish_2001, by=c("PARName"="parish")) %>%
+   mutate(pop_working_land_2001=100 * pop_working_land_2001/pop_working_all_2001) %>% 
+   select(PARName, pop_working_land_2001, A_agri)
+   
+```
 
-compare civic and ag parish sizes.
