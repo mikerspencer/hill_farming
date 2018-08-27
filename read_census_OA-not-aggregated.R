@@ -23,7 +23,7 @@ KS605SC = read_csv("projects/hill_farming/data/KS605SC.csv", skip=4)
 
 # Which columns are we interested in?
 census_2001 = KS01 %>% 
-   inner_join(KS11a) %>% 
+   left_join(KS11a) %>% 
    select(TAG=X1,
           pop_all_2001=`2001 Population: All people`,
           pop_male_2001=`2001 Population: Males`,
@@ -35,18 +35,19 @@ census_2001 = KS01 %>%
           pop_working_public=`Percentage of people aged 16 to 74 working in: Public administration and defence, social security`,
           pop_working_ed=`Percentage of people aged 16 to 74 working in: Education`,
           pop_working_health=`Percentage of people aged 16 to 74 working in: Health and social work`) %>% 
-   mutate(pop_working_ag_2001=as.numeric(str_replace(pop_working_ag_2001, "-", "0")),
+   mutate(pop_working_all_2001=replace_na(pop_working_all_2001, 0),
+          pop_working_ag_2001=as.numeric(str_replace(pop_working_ag_2001, "-", "0")),
           pop_working_fish_2001=as.numeric(str_replace(pop_working_fish_2001, "-", "0")),
           pop_working_utilities=as.numeric(str_replace(pop_working_utilities, "-", "0")),
           pop_working_public=as.numeric(str_replace(pop_working_public, "-", "0")),
           pop_working_ed=as.numeric(str_replace(pop_working_ed, "-", "0")),
           pop_working_health=as.numeric(str_replace(pop_working_health, "-", "0"))) %>% 
-   mutate(pop_working_ag_2001=pop_working_ag_2001 / 100 * pop_all_2001,
-          pop_working_fish_2001=pop_working_fish_2001 / 100 * pop_all_2001,
-          pop_working_utilities=pop_working_utilities / 100 * pop_all_2001,
-          pop_working_public=pop_working_public / 100 * pop_all_2001,
-          pop_working_ed=pop_working_ed / 100 * pop_all_2001,
-          pop_working_health=pop_working_health / 100 * pop_all_2001) %>% 
+   mutate(pop_working_ag_2001=pop_working_ag_2001 / 100 * pop_working_all_2001,
+          pop_working_fish_2001=pop_working_fish_2001 / 100 * pop_working_all_2001,
+          pop_working_utilities=pop_working_utilities / 100 * pop_working_all_2001,
+          pop_working_public=pop_working_public / 100 * pop_working_all_2001,
+          pop_working_ed=pop_working_ed / 100 * pop_working_all_2001,
+          pop_working_health=pop_working_health / 100 * pop_working_all_2001) %>% 
    mutate(pop_working_land_2001=pop_working_ag_2001 + pop_working_fish_2001,
           pop_working_service_2001=pop_working_utilities + pop_working_public + pop_working_ed + pop_working_health) %>% 
    select(-pop_working_ag_2001, -pop_working_fish_2001, -pop_working_utilities, -pop_working_public, -pop_working_ed, -pop_working_health)
