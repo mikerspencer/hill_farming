@@ -21,7 +21,7 @@ options(scipen = 999)
 
 ### Purpose
 
-This document is part of a project evaluating the importance of hill farming in Scottish communities. It compares census data at output area level (as downloaded), to aggregations at agricultural parish level.
+This document is part of a project evaluating the importance of hill farming in Scottish communities. It compares census data at output area level (as downloaded), to aggregations at agricultural parish level. The aggregated parishes are then compared to civic parishes, which are broadly similar in name and boundary to the agricultural parishes.
 
 
 ```{r agricultural_parishes, fig.cap="2016 agricultural parishes"}
@@ -98,11 +98,10 @@ plot.map("pop_working_all_2011", "2011 working\npopulation")
 plot.map("pop_working_land_2011", "2011 working in\nprimary production\npopulation")
 ```
 
-Note that these results may be skewed by an issue with island polygons.
 
 ## Proportions for agricultural parishes
 
-Proportions should correct nearly all potential issues with island polygons (until I fix the underlying cause), because populations are elevated for all areas. So taking relative values (proportions) 
+
 
 ```{r pop proportions}
 prop.map("pop_working_land_2011", "pop_all_2011", "Proportion of\ntotal population\nemployed in\nprimary production")
@@ -119,6 +118,12 @@ prop.map("pop_working_land_2011", "pop_working_all_2011", "Proportion of\nworkin
 * Ag/for/fish working population in 2011 = `r round(sum(census$pop_working_land_2011))`
 * Proportion in land/primary of total population in 2011 = `r scales::percent(sum(census$pop_working_land_2011) / sum(census$pop_all_2011))`
 * Proportion in land/primary of working population in 2011 = `r scales::percent(sum(census$pop_working_land_2011) / sum(census$pop_working_all_2011))`
+
+* Total people in 2001 = `r round(sum(census$pop_all_2001))`
+* Total working population in 2001 = `r round(sum(census$pop_working_all_2001))`
+* Ag/for/fish working population in 2001 = `r round(sum(census$pop_working_land_2001))`
+* Proportion in land/primary of total population in 2001 = `r scales::percent(sum(census$pop_working_land_2001) / sum(census$pop_all_2001))`
+* Proportion in land/primary of working population in 2001 = `r scales::percent(sum(census$pop_working_land_2001) / sum(census$pop_working_all_2001))`
 
 ### Using census output areas
 
@@ -147,7 +152,7 @@ census_spatial = tidy(census_spatial) %>%
 
 * Total people in 2001 = `r sum(census_OA_2001$pop_all_2001, na.rm=T)`
 * Total working population in 2001 = `r sum(census_OA_2001$pop_working_all_2001, na.rm=T)`
-* Ag/for/fish working population in 2001 = `r sum(census_OA_2001$pop_working_land_2001, na.rm=T)`
+* Ag/for/fish working population in 2001 = `r round(sum(census_OA_2001$pop_working_land_2001, na.rm=T))`
 * Proportion in land/primary of total population in 2001 = `r scales::percent(sum(census_OA_2001$pop_working_land_2001, na.rm=T) / sum(census_OA_2001$pop_all_2001, na.rm=T))`
 * Proportion in land/primary of working population in 2001 = `r scales::percent(sum(census_OA_2001$pop_working_land_2001, na.rm=T) / sum(census_OA_2001$pop_working_all_2001, na.rm=T))`
 
@@ -158,9 +163,14 @@ Aggregation is causing inflation in certain areas. Likely due to rounding error,
 
 Using the census data as a benchmark, census data have been subtracted from aggregated data. Hence negative values mean aggregated data are less than the census output area data.
 
-* Total people in 2011 = `r round(sum(census$pop_all_2011) - sum(census_OA_2011$pop_all_2011))`
-* Total working population in 2011 = `r round(sum(census$pop_working_all_2011) - sum(census_OA_2011$pop_working_all_2011))`
-* Ag/for/fish working population in 2011 = `r round(sum(census$pop_working_land_2011) - sum(census_OA_2011$pop_working_land_2011))`
+* Total people in 2011 = `r round(sum(census$pop_all_2011, na.rm=T) - sum(census_OA_2011$pop_all_2011, na.rm=T))`
+* Total working population in 2011 = `r round(sum(census$pop_working_all_2011, na.rm=T) - sum(census_OA_2011$pop_working_all_2011, na.rm=T))`
+* Ag/for/fish working population in 2011 = `r round(sum(census$pop_working_land_2011, na.rm=T) - sum(census_OA_2011$pop_working_land_2011, na.rm=T))`
+
+* Total people in 2001 = `r round(sum(census$pop_all_2001, na.rm=T) - sum(census_OA_2001$pop_all_2001, na.rm=T))`
+* Total working population in 2001 = `r round(sum(census$pop_working_all_2001, na.rm=T) - sum(census_OA_2001$pop_working_all_2001, na.rm=T))`
+* Ag/for/fish working population in 2001 = `r round(sum(census$pop_working_land_2001, na.rm=T) - sum(census_OA_2001$pop_working_land_2001, na.rm=T))`
+
 
 ## Maps of census output areas
 
@@ -422,8 +432,8 @@ x %>%
 
 There are two agricultural parishes called Cathcart, when their populations are added together they sum to the population of the civic parish with the same name.
 
-Total working population in 2011 for aggregated agricultural parishes is `r sum(census$pop_working_all_2011)` people and for civic parishes `r sum(civ_parish_2011$all)` people.
-In 2001 the total working population for aggregated agricultural parishes is `r sum(census$pop_working_all_2001)` people and for civic parishes `r sum(civ_parish_2001$all)` people.
+Total working population in 2011 for aggregated agricultural parishes is `r round(sum(census$pop_working_all_2011))` people and for civic parishes `r sum(civ_parish_2011$all)` people.
+In 2001 the total working population for aggregated agricultural parishes is `r round(sum(census$pop_working_all_2001))` people and for civic parishes `r sum(civ_parish_2001$all)` people.
 
 ```{r ag2civ parishes land employment}
 x = census %>% 
@@ -455,8 +465,8 @@ ggplot(y, aes(prop2001, A_agri.x)) +
 ```
 
 SIC code A from 2011 was used as a base, but was different in 2001. I have aggregated two 2001 employment categories to create one broadly comparable to the SIC A of 2011.
-The working in agriculture/forestry/fishing population for aggregated parishes in 2011 is `r sum(census$pop_working_land_2011)` people and for civic parishes `r sum(civ_parish_2011$A_agri/100 * civ_parish_2011$all, na.rm=T)` people.
+The working in agriculture/forestry/fishing population for aggregated parishes in 2011 is `r round(sum(census$pop_working_land_2011))` people and for civic parishes `r sum(civ_parish_2011$A_agri/100 * civ_parish_2011$all, na.rm=T)` people.
 compare them to the census output area value, which is `r sum(census_OA_2011$pop_working_land_2011, na.rm=T)` people.
-The same values for 2001 are: aggregated agricultural parishes, `r sum(census$pop_working_land_2001)`; civic parishes `r sum(civ_parish_2001$A_agri/100 * civ_parish_2001$all, na.rm=T)` people; `r sum(census_OA_2001$pop_working_land_2001)` people.
+The same values for 2001 are: aggregated agricultural parishes, `r round(sum(census$pop_working_land_2001))`; civic parishes `r sum(civ_parish_2001$A_agri/100 * civ_parish_2001$all, na.rm=T)` people; output areas `r sum(census_OA_2001$pop_working_land_2001)` people.
 The largest differences are between the civic parishes and the output areas/aggregated parishes for 2001.
 
