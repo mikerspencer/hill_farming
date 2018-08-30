@@ -1,5 +1,5 @@
 ---
-title: "Census employment data QA"
+title: "Employment in hill farming areas"
 author: "Mike Spencer"
 date: "3 July 2018"
 output: word_document
@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo=F, message=F)
 library(rgdal)
 library(broom)
 library(tidyverse)
-library(ggmap)
+library(patchwork)
 library(viridis)
 library(knitr)
 ```
@@ -24,8 +24,9 @@ plot.map = function(dat, i, tit){
                    colour="grey30", fill=NA, size=0.1) +
       coord_equal() +
       scale_fill_distiller(palette="PRGn", direction=1,
-                           breaks=pretty_breaks(n=5),
-                           limits=c(-1, 1)) +
+                           breaks=scales::pretty_breaks(n=5),
+                           labels=scales::percent,
+                           limits=c(-0.5, 0.5)) +
       labs(fill=tit) +
       theme_minimal() +
       theme(axis.text=element_blank(),
@@ -41,7 +42,7 @@ plot.map = function(dat, i, tit){
 This document is part of a project evaluating the importance of hill farming in Scottish communities. It compares agricultural and population census data at an agricultural parish level to an index of hill farming.
 
 
-```{r data}
+```{r data, results='hide'}
 parishes = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/ag_parishes_2016.gpkg"), "simplified_parishes")
 
 parishes$id = row.names(parishes)
@@ -72,17 +73,36 @@ Missing for some variables, but not others.
 ```{r population change}
 hills %>% 
    left_join(census) %>% 
+   ggplot(aes(score, pop_all_2001)) +
+   geom_point(alpha=0.25) +
+   labs(title="Total population",
+        subtitle="2001",
+        x="Hill score",
+        y="People") +
+hills %>% 
+   left_join(census) %>% 
    ggplot(aes(score, pop_all_2011)) +
-   geom_point()
-
+   geom_point(alpha=0.25) +
+   labs(subtitle="2011",
+        x="Hill score",
+        y="People") +
+hills %>% 
+   left_join(census) %>% 
+   ggplot(aes(pop_all_2001, pop_all_2011)) +
+   geom_point(alpha=0.25) +
+   geom_abline() +
+   labs(subtitle="2001 and 2011 comparison with 1:1 line",
+        x="2001",
+        y="2011") +
 hills %>% 
    left_join(census) %>% 
    mutate(perc_diff = (pop_all_2011 - pop_all_2001) / pop_all_2001) %>% 
    ggplot(aes(score, perc_diff)) +
    geom_point(alpha=0.25) +
    scale_y_continuous(labels=scales::percent) +
-   labs(x="Hill score",
-        y="Percentage change between 2001 and 2011")
+   labs(subtitle="Population change between 2001 and 2011",
+        x="Hill score",
+        y="Percentage")
 
 x = hills %>% 
    left_join(census) %>% 
@@ -91,7 +111,7 @@ x = hills %>%
 
 parishes %>% 
    left_join(x) %>% 
-   plot.map("perc_diff", "Population change")
+   plot.map("perc_diff", "Population\nchange")
 ```
 
 ### Population working
@@ -99,17 +119,39 @@ parishes %>%
 ```{r population working}
 hills %>% 
    left_join(census) %>% 
+   ggplot(aes(score, pop_working_all_2001)) +
+   geom_point(alpha=0.25) +
+   labs(title="Working population (16-74)",
+        subtitle="2001",
+        x="Hill score",
+        y="People") +
+hills %>% 
+   left_join(census) %>% 
    ggplot(aes(score, pop_working_all_2011)) +
-   geom_point()
-
+   geom_point(alpha=0.25) +
+   labs(subtitle="2011",
+        x="Hill score",
+        y="People") +
+hills %>% 
+   left_join(census) %>% 
+   ggplot(aes(pop_working_all_2001, pop_working_all_2011)) +
+   geom_point(alpha=0.25) +
+   geom_abline() +
+   labs(subtitle="2001 and 2011 comparison with 1:1 line",
+        x="2001",
+        y="2011") +
 hills %>% 
    left_join(census) %>% 
    mutate(perc_diff = (pop_working_all_2011 - pop_working_all_2001) / pop_working_all_2001) %>% 
    ggplot(aes(score, perc_diff)) +
    geom_point(alpha=0.25) +
+   geom_text(aes(label=ifelse(!between(perc_diff, -.50, 1), 
+                              as.character(PARName), "")),
+             hjust=0, vjust=0) +
    scale_y_continuous(labels=scales::percent) +
-   labs(x="Hill score",
-        y="Percentage change between 2001 and 2011")
+   labs(subtitle="Population change between 2001 and 2011",
+        x="Hill score",
+        y="Percentage")
 
 x = hills %>% 
    left_join(census) %>% 
@@ -118,25 +160,49 @@ x = hills %>%
 
 parishes %>% 
    left_join(x) %>% 
-   plot.map("perc_diff", "Population change")
+   plot.map("perc_diff", "Working\npopulation\nchange")
 ```
 
 ### Public sector type work
 
+Need to detail what's included in 2001 and 2011 public service, as this could be source of increase!
+
 ```{r population public}
 hills %>% 
    left_join(census) %>% 
+   ggplot(aes(score, pop_working_service_2001)) +
+   geom_point(alpha=0.25) +
+   labs(title="Working in public service",
+        subtitle="2001",
+        x="Hill score",
+        y="People") +
+hills %>% 
+   left_join(census) %>% 
    ggplot(aes(score, pop_working_service_2011)) +
-   geom_point()
-
+   geom_point(alpha=0.25) +
+   labs(subtitle="2011",
+        x="Hill score",
+        y="People") +
+hills %>% 
+   left_join(census) %>% 
+   ggplot(aes(pop_working_service_2001, pop_working_service_2011)) +
+   geom_point(alpha=0.25) +
+   geom_abline() +
+   labs(subtitle="2001 and 2011 comparison with 1:1 line",
+        x="2001",
+        y="2011") +
 hills %>% 
    left_join(census) %>% 
    mutate(perc_diff = (pop_working_service_2011 - pop_working_service_2001) / pop_working_service_2001) %>% 
    ggplot(aes(score, perc_diff)) +
    geom_point(alpha=0.25) +
+   geom_text(aes(label=ifelse(!between(perc_diff, -.50, 1.5), 
+                              as.character(PARName), "")),
+             hjust=0, vjust=0) +
    scale_y_continuous(labels=scales::percent) +
-   labs(x="Hill score",
-        y="Percentage change between 2001 and 2011")
+   labs(subtitle="Population change between 2001 and 2011",
+        x="Hill score",
+        y="Percentage")
 
 x = hills %>% 
    left_join(census) %>% 
@@ -145,7 +211,7 @@ x = hills %>%
 
 parishes %>% 
    left_join(x) %>% 
-   plot.map("perc_diff", "Population change")
+   plot.map("perc_diff", "Public service\nemployment\nchange")
 ```
 
 ### Primary production
@@ -153,17 +219,39 @@ parishes %>%
 ```{r primary production}
 hills %>% 
    left_join(census) %>% 
-   ggplot(aes(score, pop_working_land_2011 / pop_working_all_2011)) +
-   geom_point()
-
+   ggplot(aes(score, pop_working_land_2001)) +
+   geom_point(alpha=0.25) +
+   labs(title="Working in public service",
+        subtitle="2001",
+        x="Hill score",
+        y="People") +
+hills %>% 
+   left_join(census) %>% 
+   ggplot(aes(score, pop_working_land_2011)) +
+   geom_point(alpha=0.25) +
+   labs(subtitle="2011",
+        x="Hill score",
+        y="People") +
+hills %>% 
+   left_join(census) %>% 
+   ggplot(aes(pop_working_land_2001, pop_working_land_2011)) +
+   geom_point(alpha=0.25) +
+   geom_abline() +
+   labs(subtitle="2001 and 2011 comparison with 1:1 line",
+        x="2001",
+        y="2011") +
 hills %>% 
    left_join(census) %>% 
    mutate(perc_diff = (pop_working_land_2011 - pop_working_land_2001) / pop_working_land_2001) %>% 
    ggplot(aes(score, perc_diff)) +
    geom_point(alpha=0.25) +
+   geom_text(aes(label=ifelse(!between(perc_diff, -.75, .5), 
+                              as.character(PARName), "")),
+             hjust=0, vjust=0) +
    scale_y_continuous(labels=scales::percent) +
-   labs(x="Hill score",
-        y="Percentage change between 2001 and 2011")
+   labs(subtitle="Population change between 2001 and 2011",
+        x="Hill score",
+        y="Percentage")
 
 x = hills %>% 
    left_join(census) %>% 
@@ -172,31 +260,24 @@ x = hills %>%
 
 parishes %>% 
    left_join(x) %>% 
-   plot.map("perc_diff", "Population change")
+   plot.map("perc_diff", "Primary\nproduction\nemployment\nchange")
 ```
 
-### Primary production without public working
+## Agricultural census
 
-```{r primary production}
-hills %>% 
-   left_join(census) %>% 
-   mutate(perc_diff = (pop_all_2011 - pop_all_2001) / pop_all_2001) %>% 
-   ggplot(aes(score, perc_diff)) +
-   geom_point(alpha=0.25) +
-   scale_y_continuous(labels=scales::percent) +
-   labs(x="Hill score",
-        y="Percentage change between 2001 and 2011")
+```{r ag census}
 
-x = hills %>% 
-   left_join(census) %>% 
-   mutate(perc_diff = (pop_all_2011 - pop_all_2001) / pop_all_2001) %>% 
-   select(PARCode, perc_diff)
-
-parishes %>% 
-   left_join(x) %>% 
-   plot.map("perc_diff", "Population change")
 ```
 
+
+make up of sector
+age?
+gender
+owned/rented?
+casual
+family
+
+Possible to look at productivity change? Is output higher for less staff? Is this universal or do hill areas behave differently?
 
 ## Comparisons
 
@@ -205,7 +286,10 @@ parishes %>%
 * SNH National Nature Reserves (NNR): <https://gateway.snh.gov.uk/natural-spaces/>
 * JHI Land capability for forestry: <http://www.hutton.ac.uk/learning/natural-resource-datasets>
 
-```{r functions}
+Proportions of each classification against hill score.
+
+
+```{r functions deprecated}
 plot.map = function(i, tit){
    ggplot(parishes, aes(long, lat, group=group)) +
       geom_polygon(aes_string(fill=i)) +
