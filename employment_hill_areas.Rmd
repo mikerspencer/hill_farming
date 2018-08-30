@@ -265,10 +265,41 @@ parishes %>%
 
 ## Agricultural census
 
-```{r ag census}
+Agricultural census questions considered:
+
+* ITEM177                        Occupier working full-time on holding
+* ITEM178                Occupier working half-time or more on holding
+* ITEM179              Occupier working less than half time on holding
+* ITEM182                          Spouse working full-time on holding
+* ITEM183                  Spouse working half-time or more on holding
+* ITEM184                Spouse working less than half time on holding
+* ITEM177                        Occupier working full-time on holding
+* ITEM178                Occupier working half-time or more on holding
+* ITEM179              Occupier working less than half time on holding
+* ITEM182                          Spouse working full-time on holding
+* ITEM183                  Spouse working half-time or more on holding
+* ITEM184                Spouse working less than half time on holding
+* ITEM1714                   Full-time regular staff - male - partners
+* ITEM1715                      Full-time regular staff - male - hired
+* ITEM1716 Full-time regular staff - male - member of occupiers family
+* ITEM1717                 Full-time regular staff - female - partners
+* ITEM1718                   Part-time regular staff - male - partners
+* ITEM1719                 Part-time regular staff - female - partners
+
+```{r ag census people}
+hills %>% 
+   left_join(ag_census_2000, by=c("PARCode"="PARISH")) %>% 
+   ggplot(aes(score, ITEM177)) + 
+   geom_point()
+
+hills %>% 
+   left_join(ag_census_2011, by=c("PARCode"="PARISH")) %>% 
+   ggplot(aes(score, ITEM177)) + 
+   geom_point()
 
 ```
 
+Why so many missing values in 2011 item177?
 
 make up of sector
 age?
@@ -278,6 +309,20 @@ casual
 family
 
 Possible to look at productivity change? Is output higher for less staff? Is this universal or do hill areas behave differently?
+
+```{r ag census output}
+# 2     ITEM11                                  Area Owned by the Occupier
+# 3      ITEM7                         Area Rented from an outside concern
+# 4      ITEM7         Question changed to Area Rented from another person
+# 5     ITEM40                                      Total Crops and Fallow
+# 6     ITEM50                                          Total Area of Land
+# 7     ITEM68                                            Total Vegetables
+# 8     ITEM76                                            Total Soft Fruit
+# 9     ITEM84                      Total bulbs, flowers and nursery stock
+# 10   ITEM122                                                Total cattle
+# 11   ITEM145                                 Total sheep, rams and lambs
+```
+
 
 ## Comparisons
 
