@@ -286,6 +286,8 @@ Agricultural census questions considered:
 * ITEM1718                   Part-time regular staff - male - partners
 * ITEM1719                 Part-time regular staff - female - partners
 
+ITEM 177 is useless - apparently all owner occupiers in 2000 were less than 30 years old.
+
 ```{r ag census people}
 hills %>% 
    left_join(ag_census_2000, by=c("PARCode"="PARISH")) %>% 
