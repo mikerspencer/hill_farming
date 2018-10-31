@@ -2,7 +2,9 @@
 title: "Employment in hill farming areas"
 author: "Mike Spencer"
 date: "3 July 2018"
-output: word_document
+output:  
+	html_document: 
+		toc: yes
 ---
 
 ```{r setup, include=FALSE}
