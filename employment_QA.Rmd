@@ -3,8 +3,8 @@ title: "Census employment data QA"
 author: "Mike Spencer"
 date: "3 July 2018"
 output: 
-	html_document: 
-		toc: yes
+  html_document: 
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}
