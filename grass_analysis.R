@@ -5,13 +5,16 @@
 # -------------------------
 
 # Terrain preparation
-system("r.slope.aspect elevation=Terrain50@hill_farms slope=Terrain50_slope aspect=Terrain50_aspect")
+system("r.reclass --overwrite input=Terrain50@PERMANENT output=Terrain50_0 rules=")
+# -10 thru 0 = 0
+# * = *
+system("r.slope.aspect --overwrite elevation=Terrain50_0 slope=Terrain50_slope aspect=Terrain50_aspect")
 
 # Extract terrain data
 system("g.copy --overwrite vector=ag_parishes@hill_farms,terrain_parish")
-system("v.db.addcolumn map=terrain_parish columns=area_part DOUBLE PRECISION")
+system("v.db.addcolumn map=terrain_parish columns='area_part DOUBLE PRECISION'")
 system("v.to.db map=terrain_parish option=area columns=area_part")
-system("v.rast.stats map=terrain_parish@hill_farms raster=Terrain50@hill_farms column_prefix=elev_ method=minimum,maximum,average,median")
+system("v.rast.stats map=terrain_parish@hill_farms raster=Terrain50_0 column_prefix=elev_ method=minimum,maximum,average,median")
 system("v.rast.stats map=terrain_parish@hill_farms raster=Terrain50_slope@hill_farms column_prefix=slope_ method=minimum,maximum,average,median")
 
 # Query vector layers
