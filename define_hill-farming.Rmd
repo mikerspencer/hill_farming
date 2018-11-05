@@ -125,7 +125,7 @@ For the slope and elevation datasets summary values were extracted for each agri
 The four measures of elevation were compared in order to select a single indicator.
 These comparisons are shown below, with the numeric values being Pearson correlation coefficients.
 
-```{r elevation_pairs, fig.height=8, fig.width=8, fig.cap="Comparisons of elevation measures"}
+```{r elevation_pairs, fig.height=8, fig.width=8, fig.cap="Comparisons of elevation measures", eval=F}
 restrictions %>% 
    select(elev__minimum, elev__average, elev__median, elev__maximum) %>% 
    pairs(col=rgb(0, 75/255, 35/255, 0.25),
@@ -141,7 +141,7 @@ Mean parish elevation has been chosen as a single measure of parish elevation.
 This because it is a central measure which captures the variation of the minimum, median and maximum best (correlations of 0.77, 0.99 and 0.94 respectively).
 
 ```{r elevation, fig.cap="Map of mean parish elevation"}
-plot.map("elev__average", "Elevation\nmean (m)")
+plot.map("elev_mean", "Elevation\nmean (m)")
 ```
 
 
@@ -150,7 +150,7 @@ plot.map("elev__average", "Elevation\nmean (m)")
 As for elevation, slope measures were compared to each other (below).
 This plot matrix shows scatter plots between the measures in the lower left and Pearson's correlations in the upper right.
 
-```{r slope_pairs, fig.height=8, fig.width=8, fig.cap="Comparison of slope measures"}
+```{r slope_pairs, fig.height=8, fig.width=8, fig.cap="Comparison of slope measures", eval=F}
 restrictions %>% 
    select(slope__minimum, slope__average, slope__median, slope__maximum) %>% 
    pairs(col=rgb(0, 75/255, 35/255, 0.25),
@@ -164,7 +164,7 @@ There is greater variability when compared to maximum slopes, but the largest va
 A mean (average) slope has been used as a single parish slope indicator because it has the best correlation with median or maximum slope (0.98 and 0.71 respectively).
 
 ```{r slope, fig.cap="Map of mean parish slope"}
-plot.map("slope__average", "Slope\nmean\n(degrees)")
+plot.map("slope_mean", "Slope\nmean\n(degrees)")
 ```
 
 ### Grazing
@@ -252,21 +252,21 @@ plot.map("landscape_class_prop", "SNH\nUpland\nLandscape\nProportion")
 ### Carbon and peatland
 
 SNH produce a map of carbon rich soils and peatland, these are polygon data with each polygon taking a categorical variable.
-These classifications were split into those which might indicate hill farming and those which do not.
-These classifications are listed below:
+These classifications were split into those with peat soils and those without.
+These classifications are listed below and are taken from the following report.
+
+<https://www.nature.scot/sites/default/files/2018-05/Carbon%20and%20Peatland%20map%20consultation%20analysis%20report.pdf>
 
 ```{r SNH_peat_areas}
-x = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/PEAT_SCOTLAND_parishes.csv") %>% 
-   select(a_PRIMARY_LA) %>% 
-   distinct()
+x = read_delim("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/PEAT_meta.txt", delim="|")
 
-y=c("Peaty gleys", "Peaty gleyed podzols", "Scree", "Subalpine podzols", "Dystrophic blanket peat", "Alpine podzols", "Dystrophic basin peat", "Peaty rankers", "Undifferentiated basin peats", "Dystrophic semi-confined peat", "Rankers",  "Podzolic rankers", "Peaty alluvial soils", "Shingle", "Undifferentiated semi-confined peats", "Subalpine (Orohemiarctic) podzols", "Rock", "Peaty podzols", "Alpine (Oroarctic) podzols", "Alpine (Oroarctic) gleys", "Brown rankers")
+x %>% 
+   filter(Class %in% c(1, 2, 3, 5)) %>% 
+   kable(caption="Hill farming")
 
-data.frame(peat_areas=y) %>% 
-   kable(col.names="Hill farming classes")
-
-data.frame(not_peat_areas=x$a_PRIMARY_LA[!x$a_PRIMARY_LA %in% y]) %>%
-   kable(col.names="Not hill farming classes")
+x %>% 
+   filter(Class %in% c(-2, -1, 0, 4)) %>% 
+   kable(caption="Not hill farming")
 ```
 
 Those believed to indicate hill farming constraints were used to calculate the proportion of agricultural parish within them and are plotted below.
@@ -316,11 +316,9 @@ The Cairngorms score highest, with areas in the central and western Highlands, N
 
 ```{r score, fig.cap="Map of parish hill farming index"}
 score = restrictions %>% 
-   select(-PARName,
-          -elev__minimum, -elev__median, -elev__maximum,
-          -slope__minimum, -slope__median, -slope__maximum) %>% 
-   mutate(elev__average=elev__average/max(elev__average),
-          slope__average=slope__average/max(slope__average)) %>% 
+   select(-PARName) %>% 
+   mutate(elev_mean=elev_mean/max(elev_mean),
+          slope_mean=slope_mean/max(slope_mean)) %>% 
    gather(variable, value, -PARCode) %>% 
    group_by(PARCode) %>% 
    summarise(score=sum(value))
@@ -382,7 +380,7 @@ Numbers in the upper right panels are Pearson correlations.
 
 ```{r proportion_pairs, fig.height=10, fig.width=10, fig.cap="Comparison of hill farming indices by parish"}
 restrictions %>% 
-   select(elev__average, slope__average, r_grazing_prop, c_grazing_prop, landscape_class_prop, land_cap_ag_prop, peat_prop) %>% 
+   select(elev_mean, slope_mean, r_grazing_prop, c_grazing_prop, landscape_class_prop, land_cap_ag_prop, peat_prop) %>% 
    pairs(col=rgb(0, 75/255, 35/255, 0.25),
          upper.panel=panel.cor,
          main="Hilliness indicator comparisons")
@@ -397,13 +395,13 @@ The following sections detail this work.
 
 ### Build k-means model
 
-A k-means model was built using standarised elev__average, slope__average, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, NNR_prop and peat_prop variables.
+A k-means model was built using standarised elev_mean, slope_mean, grazing_prop, landscape_class_prop, land_cap_ag_prop, land_cap_forest_prop, wildland_prop, rural_prop, NNR_prop and peat_prop variables.
 The optimum number of cluster were determined using the elbow method, where we try to minimise the total intra-cluster variation.
 In this case, the below plot indicates two clusters may be appropriate, however these data are a little messy.
 
 ```{r kmean build, fig.cap="Elbow plot for determining optimal cluster number"}
 x = restrictions %>% 
-   select(elev__average, slope__average, c_grazing_prop, r_grazing_prop, landscape_class_prop, land_cap_ag_prop, peat_prop)
+   select(elev_mean, slope_mean, c_grazing_prop, r_grazing_prop, landscape_class_prop, land_cap_ag_prop, peat_prop)
 
 # Standardise values
 x = scale(x)
