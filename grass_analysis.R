@@ -9,6 +9,8 @@ system("r.slope.aspect elevation=Terrain50@hill_farms slope=Terrain50_slope aspe
 
 # Extract terrain data
 system("g.copy --overwrite vector=ag_parishes@hill_farms,terrain_parish")
+system("v.db.addcolumn map=terrain_parish columns=area_part DOUBLE PRECISION")
+system("v.to.db map=terrain_parish option=area columns=area_part")
 system("v.rast.stats map=terrain_parish@hill_farms raster=Terrain50@hill_farms column_prefix=elev_ method=minimum,maximum,average,median")
 system("v.rast.stats map=terrain_parish@hill_farms raster=Terrain50_slope@hill_farms column_prefix=slope_ method=minimum,maximum,average,median")
 
