@@ -55,16 +55,19 @@ land_classes = read_csv("~/projects/hill_farming/data/LCA_SCOTLAND_parishes.csv"
 # Peat/carbon map
 Peat = read_csv("~/projects/hill_farming/data/PEAT_SCOTLAND_parishes.csv") %>% 
    rename(PARCode=b_PARCode, PARName=b_PARName) %>% 
-   filter(a_COMPSOIL %in% c("Peaty gleys", "Peaty gleyed podzols", "Scree", "Subalpine podzols", "Dystrophic blanket peat", "Alpine podzols", "Dystrophic basin peat", "Peaty rankers", "Undifferentiated basin peats", "Dystrophic semi-confined peat", "Rankers",  "Podzolic rankers", "Peaty alluvial soils", "Shingle", "Undifferentiated semi-confined peats", "Subalpine (Orohemiarctic) podzols", "Rock", "Peaty podzols", "Alpine (Oroarctic) podzols", "Alpine (Oroarctic) gleys", "Brown rankers")) %>% 
+   filter(a_IMPORTANCE %in% c(1, 2, 3, 5)) %>% 
    group_by(PARCode, PARName) %>% 
    summarise(peat_prop=sum(PEAT_SCOTLAND_area / b_Shape_Area))
 
 # Terrain
 terrain = read_csv("~/projects/hill_farming/data/terrain_parishes.csv") %>% 
-   select(-cat, -Shape_Leng, -Shape_Area) %>% 
-   drop_na() %>% 
+   select(cat, PARCode, PARName, Shape_Area, elev__average, slope__average, area_part) %>% 
    group_by(PARCode, PARName) %>% 
-   summarise_all(mean)
+   mutate(area_part = area_part/Shape_Area,
+          elev_mean = elev__average * area_part,
+          slope_mean = slope__average * area_part) %>% 
+   summarise(elev_mean = sum(elev_mean, na.rm=T),
+             slope_mean = sum(slope_mean, na.rm=T))
 
 # Common grazing
 # Note there is likely an issue with the reported area of common grazing as 1 parish is greater than 100 %.
