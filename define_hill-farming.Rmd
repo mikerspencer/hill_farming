@@ -419,9 +419,12 @@ plot(1:10, wss, type="b", main="Required number of clusters", xlab="Number of Cl
 set.seed(224)
 
 fit2 = kmeans(x, 2) # 2 cluster solution
+fit4 = kmeans(x, 4) # 4 cluster solution
 
 # append cluster assignment
-restrictions = data.frame(restrictions, cluster2=fit2$cluster)
+restrictions = data.frame(restrictions,
+                          cluster2=fit2$cluster,
+                          cluster4=fit4$cluster)
 ```
 
 These two clusters can then be mapped to our parishes as two levels: hill farming areas and not hill farming areas (below).
@@ -429,7 +432,7 @@ As we expect, these are largely similar to the hill farming index, but partition
 
 ```{r kmean_map, fig.cap="Map of parishes grouped by hill farming indices"}
 parishes = parishes %>% 
-   left_join(select(restrictions, PARCode, cluster2))
+   left_join(select(restrictions, PARCode, cluster2, cluster4))
 
 parishes %>% 
    ggplot(aes(long, lat, group=group)) +
@@ -438,7 +441,22 @@ parishes %>%
                    colour="grey30", fill=NA, size=0.1) +
    coord_equal() +
    scale_fill_brewer(palette="Dark2") +
-   labs(fill="Hill or not") +
+   labs(title="Two cluster solution",
+        fill="Hill or not") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+
+parishes %>% 
+   ggplot(aes(long, lat, group=group)) +
+   geom_polygon(aes(fill=as.character(cluster2))) +
+   geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+   coord_equal() +
+   scale_fill_brewer(palette="Dark2") +
+   labs(title="Four cluster solution",
+        fill="Hill or not") +
    theme_minimal() +
    theme(axis.text=element_blank(),
          axis.title=element_blank(),
