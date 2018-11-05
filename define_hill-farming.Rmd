@@ -450,7 +450,7 @@ parishes %>%
 
 parishes %>% 
    ggplot(aes(long, lat, group=group)) +
-   geom_polygon(aes(fill=as.character(cluster2))) +
+   geom_polygon(aes(fill=as.character(cluster4))) +
    geom_polygon(data=Scotland, aes(long, lat, group=group),
                    colour="grey30", fill=NA, size=0.1) +
    coord_equal() +
@@ -470,6 +470,19 @@ parishes %>%
    group_by(PARCode) %>% 
    summarise(score=unique(score),
              cluster=unique(cluster2)) %>% 
+   ggplot(aes(as.factor(cluster), score, fill=as.factor(cluster))) +
+   geom_boxplot() +
+   scale_fill_brewer(palette="Dark2") +
+   labs(x="Cluster",
+        y="Hill farming index",
+        fill="Hilliness\ncluster") +
+   theme_bw() +
+   theme(line=element_blank())
+
+parishes %>% 
+   group_by(PARCode) %>% 
+   summarise(score=unique(score),
+             cluster=unique(cluster4)) %>% 
    ggplot(aes(as.factor(cluster), score, fill=as.factor(cluster))) +
    geom_boxplot() +
    scale_fill_brewer(palette="Dark2") +
