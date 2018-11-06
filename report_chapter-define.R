@@ -10,6 +10,7 @@
 library(tidyverse)
 library(rgdal)
 library(broom)
+library(patchwork)
 
 
 # ---------------------------------------------
@@ -204,12 +205,57 @@ dev.off()
 # ---------------------------------------------
 # Land capability (JHI)
 
+lca = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial"), "lca_250k")
+
+lca$id = row.names(lca)
+lca = tidy(lca) %>% 
+   left_join(lca@data)
+
+lca$hill[lca$lcacode %in% c(6.3, 7.0, 6.2, 6.1)] = "Upland"
+lca$hill[!lca$lcacode %in% c(6.3, 7.0, 6.2, 6.1)] = "Other"
+
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/lcagri.png",
+    height=1080, width=800)
+ggplot(lca, aes(long, lat, group=group)) +
+   geom_polygon(aes(fill=hill)) +
+   geom_polygon(data=Scotland, aes(long, lat, group=group),
+                colour="grey30", fill=NA, size=0.1) +
+   coord_equal() +
+   scale_fill_brewer(palette="Paired", direction=1) +
+   labs(fill="Agricultural\nfavourability") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank(),
+         text=element_text(size=25))
+dev.off()
 
 
 # ---------------------------------------------
 # Parish elevation and slope
 
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/parish_elev-slope.png",
+    height=1080, width=1600)
+plot.map("elev_mean", "Elevation\nmean (m)") +
+   plot.map("slope_mean", "Slope\nmean\n(degrees)")
+dev.off()
+
 
 # ---------------------------------------------
-# Parish landscape, carbon and land capability
+# Parish landscape and carbon
 
+
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/parish_landscape-peat.png",
+    height=1080, width=1600)
+plot.map("landscape_class_prop", "Landscape\nclass\nproportion") +
+   plot.map("peat_prop", "Peatland\nproportion")
+dev.off()
+
+
+# ---------------------------------------------
+# Parish ag capability
+
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/parish_lca.png",
+    height=1080, width=800)
+plot.map("land_cap_ag_prop", "Upland\nagricultural\ncapability\nproportion")
+dev.off()
