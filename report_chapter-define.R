@@ -11,6 +11,7 @@ library(tidyverse)
 library(rgdal)
 library(broom)
 library(patchwork)
+library(RColorBrewer)
 
 
 # ---------------------------------------------
@@ -37,13 +38,13 @@ parishes = parishes %>%
 # ---------------------------------------------
 # Functions
 
-plot.map = function(i, tit){
+plot.map = function(i, tit, pal){
    ggplot(parishes, aes(long, lat, group=group)) +
       geom_polygon(aes_string(fill=i)) +
       geom_polygon(data=Scotland, aes(long, lat, group=group),
                    colour="grey30", fill=NA, size=0.1) +
       coord_equal() +
-      scale_fill_distiller(palette="Greens", direction=1) +
+      scale_fill_distiller(palette=pal, direction=1) +
       labs(fill=tit) +
       theme_minimal() +
       theme(axis.text=element_blank(),
@@ -56,63 +57,58 @@ plot.map = function(i, tit){
 # ---------------------------------------------
 # Terrain50
 
-elev = readGDAL(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/elev.tif")) %>% 
-   tidy()
-
-slope = readGDAL(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/slope.tif")) %>% 
-   as.data.frame()
-
 # Elevation
 
+elev = readGDAL(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/elev.tif")) %>% 
+   as.data.frame()
+
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/elev.png",
-    height=1080, width=800)
+    height=1080, width=1600)
 ggplot(elev, aes(x, y, fill=band1)) +
    geom_raster() +
    geom_polygon(data=Scotland, aes(long, lat, group=group),
                 colour="grey30", fill=NA, size=0.1) +
    coord_equal() +
-   scale_fill_distiller(palette="Greens", direction=1) +
+   scale_fill_distiller(palette="Oranges", direction=1) +
    labs(fill="Elevation\n(metres)") +
    theme_minimal() +
    theme(axis.text=element_blank(),
          axis.title=element_blank(),
          line=element_blank(),
-         text=element_text(size=25))
+         text=element_text(size=25)) +
+   plot.map("elev_mean", "Elevation\nmean (m)", "Oranges")
 dev.off()
 
 # Slope
+
+slope = readGDAL(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/slope.tif")) %>% 
+   as.data.frame()
+
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/slope.png",
-    height=1080, width=800)
+    height=1080, width=1600)
 ggplot(slope, aes(x, y, fill=band1)) +
    geom_raster() +
    geom_polygon(data=Scotland, aes(long, lat, group=group),
                 colour="grey30", fill=NA, size=0.1) +
    coord_equal() +
-   scale_fill_distiller(palette="Greens", direction=1) +
+   scale_fill_distiller(palette="RdPu", direction=1) +
    labs(fill="Slope\n(degrees)") +
    theme_minimal() +
    theme(axis.text=element_blank(),
          axis.title=element_blank(),
          line=element_blank(),
-         text=element_text(size=25))
+         text=element_text(size=25)) +
+   plot.map("slope_mean", "Slope\nmean\n(degrees)", "RdPu")
 dev.off()
 
 
 # ---------------------------------------------
 # Common grazing
 
-png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/common_grazing.png",
-    height=1080, width=800)
-plot.map("c_grazing_prop", "Common\ngrazing\nproportion")
-dev.off()
-
-
-# ---------------------------------------------
-# Rough grazing
-
-png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/rough_grazing.png",
-    height=1080, width=800)
-plot.map("r_grazing_prop", "Rough\ngrazing\nproportion")
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/grazing.png",
+    height=1080, width=1600)
+plot.map("c_grazing_prop", "Common\ngrazing\nproportion", "Greens") +
+   plot.map("r_grazing_prop", "Rough\ngrazing\nproportion", "Greens")
 dev.off()
 
 
@@ -159,46 +155,48 @@ lca = tidy(lca) %>%
    left_join(lca@data)
 
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/landscape.png",
-    height=1080, width=800)
+    height=1080, width=1600)
 ggplot(lca, aes(long, lat, group=group)) +
    geom_polygon(aes(fill=hill)) +
    geom_polygon(data=Scotland, aes(long, lat, group=group),
                 colour="grey30", fill=NA, size=0.1) +
    coord_equal() +
-   scale_fill_brewer(palette="Set2") +
+   scale_fill_manual(values=brewer.pal(9, "Purples")[c(8, 3)]) +
    labs(fill="Landscape\nclass") +
    theme_minimal() +
    theme(axis.text=element_blank(),
          axis.title=element_blank(),
          line=element_blank(),
-         text=element_text(size=25))
+         text=element_text(size=25)) +
+   plot.map("landscape_class_prop",
+            "Landscape\nclass\nproportion",
+            "Purples")
 dev.off()
 
 
 # ---------------------------------------------
 # Carbon and peat (SNH)
 
-lca$hill[lca$LEVEL_3 %in% y] = "Peat"
-lca$hill[!lca$LEVEL_3 %in% y] = "Other"
+lca$soil[lca$LEVEL_3 %in% y] = "Peat"
+lca$soil[!lca$LEVEL_3 %in% y] = "Other"
 
-lca$id = row.names(lca)
-lca = tidy(lca) %>% 
-   left_join(lca@data)
-
-png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/peat.png",
-    height=1080, width=800)
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/peat_frame.png",
+    height=1080, width=1600)
 ggplot(lca, aes(long, lat, group=group)) +
-   geom_polygon(aes(fill=hill)) +
+   geom_polygon(aes(fill=soil)) +
    geom_polygon(data=Scotland, aes(long, lat, group=group),
                 colour="grey30", fill=NA, size=0.1) +
    coord_equal() +
-   scale_fill_brewer(palette="Set3", direction=-1) +
+   scale_fill_manual(values=brewer.pal(9, "Reds")[c(3, 8)]) +
    labs(fill="Soil") +
    theme_minimal() +
    theme(axis.text=element_blank(),
          axis.title=element_blank(),
          line=element_blank(),
-         text=element_text(size=25))
+         text=element_text(size=25)) +
+   plot.map("peat_prop",
+            "Peatland\nproportion",
+            "Reds")
 dev.off()
 
 
@@ -215,47 +213,21 @@ lca$hill[lca$lcacode %in% c(6.3, 7.0, 6.2, 6.1)] = "Upland"
 lca$hill[!lca$lcacode %in% c(6.3, 7.0, 6.2, 6.1)] = "Other"
 
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/lcagri.png",
-    height=1080, width=800)
+    height=1080, width=1600)
 ggplot(lca, aes(long, lat, group=group)) +
    geom_polygon(aes(fill=hill)) +
    geom_polygon(data=Scotland, aes(long, lat, group=group),
                 colour="grey30", fill=NA, size=0.1) +
    coord_equal() +
-   scale_fill_brewer(palette="Paired", direction=1) +
-   labs(fill="Agricultural\nfavourability") +
+   scale_fill_manual(values=brewer.pal(9, "Blues")[c(8, 3)]) +
+   labs(fill="Agricultural\ncapability") +
    theme_minimal() +
    theme(axis.text=element_blank(),
          axis.title=element_blank(),
          line=element_blank(),
-         text=element_text(size=25))
+         text=element_text(size=25)) +
+   plot.map("land_cap_ag_prop",
+            "Upland\nagricultural\ncapability\nproportion",
+            "Blues")
 dev.off()
 
-
-# ---------------------------------------------
-# Parish elevation and slope
-
-png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/parish_elev-slope.png",
-    height=1080, width=1600)
-plot.map("elev_mean", "Elevation\nmean (m)") +
-   plot.map("slope_mean", "Slope\nmean\n(degrees)")
-dev.off()
-
-
-# ---------------------------------------------
-# Parish landscape and carbon
-
-
-png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/parish_landscape-peat.png",
-    height=1080, width=1600)
-plot.map("landscape_class_prop", "Landscape\nclass\nproportion") +
-   plot.map("peat_prop", "Peatland\nproportion")
-dev.off()
-
-
-# ---------------------------------------------
-# Parish ag capability
-
-png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/parish_lca.png",
-    height=1080, width=800)
-plot.map("land_cap_ag_prop", "Upland\nagricultural\ncapability\nproportion")
-dev.off()
