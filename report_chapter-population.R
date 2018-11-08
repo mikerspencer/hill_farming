@@ -39,36 +39,90 @@ hilliness_pop = hilliness %>%
 # ---------------------------------------------
 # Functions
 
+log_with_neg = function(i){
+   i.na = which(is.na(i))
+   i[is.na(i)] = 0
+   i = i * 100
+   i[i>=1] = log10(i[i>=1])
+   i[i>-1 & i<1] = round(i[i>-1 & i<1], 1)
+   i[i<=-1] = -log10(abs(i[i<=-1]))
+   i[i.na] = NA
+   i
+}
+
+exp_with_neg = function(i){
+   i.na = which(is.na(i))
+   i[is.na(i)] = 0
+   i = i * 100
+   i[i>=1] = exp(i[i>=1])
+   i[i>-1 & i<1] = round(i[i>-1 & i<1], 1)
+   i[i<=-1] = -exp(abs(i[i<=-1]))
+   i[i.na] = NA
+   i
+}
+
+trans_neg = trans_new("trans_neg", log_with_neg, exp_with_neg)
+
+, scientific_format(suffix=" %")
+
 plot.census = function(dat, i01, i11, tit, tit.x, pal){
    x = dat %>% 
       rename_(i01=i01, i11=i11) %>% 
       mutate(perc_diff = ((i11 +1) / (i01 +1)) -1) %>% 
       select(PARCode, score, i01, i11, perc_diff)
-
-   parishes %>% 
-      left_join(x) %>% 
-      ggplot(aes(long, lat, group=group)) +
-      geom_polygon(aes(fill=perc_diff)) +
-      geom_polygon(data=Scotland, aes(long, lat, group=group),
-                   colour="grey30", fill=NA, size=0.1) +
-      coord_equal() +
-      scale_fill_distiller(palette=pal, direction=1,
-                           breaks=scales::pretty_breaks(n=5),
-                           labels=scales::percent,
-                           limits=c(-0.5, 0.5)) +
-      labs(fill=tit) +
-      theme_minimal() +
-      theme(axis.text=element_blank(),
-            axis.title=element_blank(),
-            line=element_blank(),
-            text=element_text(size=25)) +
-      ggplot(x, aes(score, perc_diff)) +
-      geom_point(size=5, alpha=0.3) +
-      scale_y_continuous(labels=scales::percent) +
-      labs(x="Hilliness score",
-           y=tit.x) +
-      theme_bw() +
-      theme(text=element_text(size=25))
+   
+   if (max(x$perc_diff, na.rm=T)<3){
+      parishes %>% 
+         left_join(x) %>% 
+         ggplot(aes(long, lat, group=group)) +
+         geom_polygon(aes(fill=perc_diff)) +
+         geom_polygon(data=Scotland, aes(long, lat, group=group),
+                      colour="grey30", fill=NA, size=0.1) +
+         coord_equal() +
+         scale_fill_distiller(palette=pal, direction=1,
+                              breaks=scales::pretty_breaks(n=5),
+                              labels=scales::percent,
+                              limits=c(-0.5, 0.5)) +
+         labs(fill=tit) +
+         theme_minimal() +
+         theme(axis.text=element_blank(),
+               axis.title=element_blank(),
+               line=element_blank(),
+               text=element_text(size=25)) +
+         ggplot(x, aes(score, perc_diff)) +
+         geom_point(size=5, alpha=0.3) +
+         scale_y_continuous(labels=scales::percent) +
+         labs(x="Hilliness score",
+              y=tit.x) +
+         theme_bw() +
+         theme(text=element_text(size=25))
+   } else {
+      parishes %>% 
+         left_join(x) %>% 
+         ggplot(aes(long, lat, group=group)) +
+         geom_polygon(aes(fill=perc_diff)) +
+         geom_polygon(data=Scotland, aes(long, lat, group=group),
+                      colour="grey30", fill=NA, size=0.1) +
+         coord_equal() +
+         scale_fill_distiller(palette=pal, direction=1,
+                              breaks=scales::pretty_breaks(n=5),
+                              labels=scales::percent,
+                              limits=c(-0.5, 0.5)) +
+         labs(fill=tit) +
+         theme_minimal() +
+         theme(axis.text=element_blank(),
+               axis.title=element_blank(),
+               line=element_blank(),
+               text=element_text(size=25)) +
+         ggplot(x, aes(score, perc_diff)) +
+         geom_point(size=5, alpha=0.3) +
+         scale_y_continuous(trans=trans_neg(), 
+                            labels=scales::percent) +
+         labs(x="Hilliness score",
+              y=tit.x) +
+         theme_bw() +
+         theme(text=element_text(size=25))
+   }
 }
 
 
@@ -135,12 +189,22 @@ temp = hilliness %>%
    left_join(ag_census_2011, by=c(PARCode="PARCode"))
 
 
-lapply(colnames(ag_census_2000)[-1], function(i){
+lapply(colnames(ag_census_2000)[11:22], function(i){
    png(paste0("~/Cloud/Michael/SRUC/hill_farms/report/Figures/ag_census", i, ".png"),
        height=1080, width=1600)
    print(
       plot.census(temp, paste0(i, ".x"), paste0(i, ".y"),
                   paste0(i, "\nchange"), paste0(i, " change"), "RdBu")
+   )
+   dev.off()
+})
+
+lapply(colnames(ag_census_2000)[2:10], function(i){
+   png(paste0("~/Cloud/Michael/SRUC/hill_farms/report/Figures/ag_census", i, ".png"),
+       height=1080, width=1600)
+   print(
+      plot.census(temp, paste0(i, ".x"), paste0(i, ".y"),
+                  paste0(i, "\nchange"), paste0(i, " change"), "RdYlGn")
    )
    dev.off()
 })
