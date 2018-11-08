@@ -61,9 +61,9 @@ exp_with_neg = function(i){
    i
 }
 
-trans_neg = trans_new("trans_neg", log_with_neg, exp_with_neg)
-
-, scientific_format(suffix=" %")
+trans_neg = trans_new(name="trans_neg",
+                      transform=log_with_neg,
+                      inverse=exp_with_neg)
 
 plot.census = function(dat, i01, i11, tit, tit.x, pal){
    x = dat %>% 
@@ -116,8 +116,8 @@ plot.census = function(dat, i01, i11, tit, tit.x, pal){
                text=element_text(size=25)) +
          ggplot(x, aes(score, perc_diff)) +
          geom_point(size=5, alpha=0.3) +
-         scale_y_continuous(trans=trans_neg(), 
-                            labels=scales::percent) +
+         scale_y_continuous(labels=scales::percent) +
+         coord_trans(y=trans_neg) +
          labs(x="Hilliness score",
               y=tit.x) +
          theme_bw() +
