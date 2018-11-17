@@ -15,6 +15,7 @@ library(viridis)
 # ---------------------------------------------
 # Data
 
+restrictions = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/parish_restrictions.csv")
 hilliness = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/hilliness.csv")
 
 parishes = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/ag_parishes_2016.gpkg"), "simplified_parishes")
@@ -64,3 +65,14 @@ ggplot(parishes, aes(long, lat, fill=score, group=group)) +
          line=element_blank(),
          text=element_text(size=25))
 dev.off()
+
+
+# ---------------------------------------------
+# Top 10
+
+hilliness %>% 
+   left_join(restrictions) %>% 
+   select(PARName, score) %>% 
+   arrange(desc(score)) %>% 
+   top_n(10, wt=score) %>% 
+   xtable()
