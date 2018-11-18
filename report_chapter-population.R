@@ -10,6 +10,7 @@ library(broom)
 library(patchwork)
 library(RColorBrewer)
 library(viridis)
+library(scales)
 
 
 # ---------------------------------------------
