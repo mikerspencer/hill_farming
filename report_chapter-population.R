@@ -255,7 +255,7 @@ areas2001 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/Out
    select(TAG=a_TAG, PARCode=b_PARCode, PARName=b_PARName, OutputAreas2001_area, a_OutputAreas2001_t_area) %>% 
    mutate(area_prop=OutputAreas2001_area / a_OutputAreas2001_t_area) %>% 
    left_join(dist2001, by=c(TAG="X1")) %>% 
-   mutate(total = TOTAL * area_prop,
+   mutate(total_2001 = TOTAL * area_prop,
           home_2001=`Works mainly at or from home` * area_prop,
           less_2km_2001=`Less than 2km` * area_prop,
           between_2_5km_2001=`2km to less than 5km` * area_prop,
@@ -264,12 +264,36 @@ areas2001 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/Out
           over_20km_2001=`20km and over` * area_prop,
           offshore_2001=`Works on an offshore installation` * area_prop,
           other_2001=Other * area_prop) %>% 
-   select(-OutputAreas2001_area, -a_OutputAreas2001_t_area, -TAG, -area_prop, -TOTAL, -`Works mainly at or from home`, -`Less than 2km`, -`2km to less than 5km`, -`5km to less than 10km`, -`10km to less than 20km`, -`20km and over`, -`Works on an offshore installation`, -Other) %>% 
+   mutate(other_2001=offshore_2001 + other_2001) %>% 
+   select(-OutputAreas2001_area, -a_OutputAreas2001_t_area, -TAG, -area_prop, -TOTAL, -`Works mainly at or from home`, -`Less than 2km`, -`2km to less than 5km`, -`5km to less than 10km`, -`10km to less than 20km`, -`20km and over`, -`Works on an offshore installation`, -Other, -offshore_2001) %>% 
    group_by(PARCode, PARName) %>% 
    summarise_all(sum, na.rm=T) %>%
    group_by(PARCode, PARName) %>% 
    mutate_all(round, 0)
 
 dist2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/LC7102SC.csv",
-                    skip=4)
+                    skip=4, na="-") %>% 
+   filter(X2=="All people aged 16 to 74 in employment") %>% 
+   select(-X2) %>% 
+   mutate_all(funs(replace(., is.na(.), 0)))
+
+areas2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/OutputArea2011_MHW_parishes.csv") %>% 
+   select(census_id=a_code, PARCode=b_PARCode, PARName=b_PARName, OutputArea2011_MHW_area, a_OutputArea2011_MHW_t_area) %>% 
+   mutate(area_prop=OutputArea2011_MHW_area / a_OutputArea2011_MHW_t_area) %>% 
+   left_join(dist2011, by=c(census_id="X1")) %>% 
+   mutate(total_2011 = `All people aged 16 to 74 in employment` * area_prop,
+          home_2011=`Work mainly at or from home` * area_prop,
+          less_2km_2011=`Less than 2km` * area_prop,
+          between_2_5km_2011=`2km to less than 5km` * area_prop,
+          between_5_10km_2011=`5km to less than 10km` * area_prop,
+          between_10_20km_2011=`10km to less than 20km` * area_prop,
+          between_20_30km_2011=`20km to less than 30km` * area_prop,
+          over_30km_2011=`30km and over` * area_prop,
+          other_2011=`Other (2)` * area_prop) %>% 
+   mutate(over_20km_2011=between_20_30km_2011 + over_30km_2011) %>% 
+   select(-OutputArea2011_MHW_area, -a_OutputArea2011_MHW_t_area, -census_id, -area_prop, -`All people aged 16 to 74 in employment`, -`Work mainly at or from home`, -`Less than 2km`, -`2km to less than 5km`, -`5km to less than 10km`, -`10km to less than 20km`, -`20km to less than 30km`, -`30km and over`, -`Other (2)`, -between_20_30km_2011, -over_30km_2011) %>% 
+   group_by(PARCode, PARName) %>% 
+   summarise_all(sum, na.rm=T) %>%
+   group_by(PARCode, PARName) %>% 
+   mutate_all(round, 0)
 
