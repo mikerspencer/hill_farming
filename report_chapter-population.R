@@ -251,25 +251,32 @@ dist2001 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/CAS225.csv",
    select(-X2) %>% 
    mutate_all(funs(replace(., is.na(.), 0)))
 
-areas2001 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/OutputAreas2001_parishes.csv") %>% 
+dist2001 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/OutputAreas2001_parishes.csv") %>% 
    select(TAG=a_TAG, PARCode=b_PARCode, PARName=b_PARName, OutputAreas2001_area, a_OutputAreas2001_t_area) %>% 
    mutate(area_prop=OutputAreas2001_area / a_OutputAreas2001_t_area) %>% 
    left_join(dist2001, by=c(TAG="X1")) %>% 
-   mutate(total_2001 = TOTAL * area_prop,
-          home_2001=`Works mainly at or from home` * area_prop,
-          less_2km_2001=`Less than 2km` * area_prop,
-          between_2_5km_2001=`2km to less than 5km` * area_prop,
-          between_5_10km_2001=`5km to less than 10km` * area_prop,
-          between_10_20km_2001=`10km to less than 20km` * area_prop,
-          over_20km_2001=`20km and over` * area_prop,
-          offshore_2001=`Works on an offshore installation` * area_prop,
-          other_2001=Other * area_prop) %>% 
-   mutate(other_2001=offshore_2001 + other_2001) %>% 
-   select(-OutputAreas2001_area, -a_OutputAreas2001_t_area, -TAG, -area_prop, -TOTAL, -`Works mainly at or from home`, -`Less than 2km`, -`2km to less than 5km`, -`5km to less than 10km`, -`10km to less than 20km`, -`20km and over`, -`Works on an offshore installation`, -Other, -offshore_2001) %>% 
+   mutate(total.2001 = TOTAL * area_prop,
+          home.2001=`Works mainly at or from home` * area_prop,
+          less_2km.2001=`Less than 2km` * area_prop,
+          between_2_5km.2001=`2km to less than 5km` * area_prop,
+          between_5_10km.2001=`5km to less than 10km` * area_prop,
+          between_10_20km.2001=`10km to less than 20km` * area_prop,
+          over_20km.2001=`20km and over` * area_prop,
+          offshore.2001=`Works on an offshore installation` * area_prop,
+          other.2001=Other * area_prop) %>% 
+   mutate(other.2001=offshore.2001 + other.2001) %>% 
+   select(-OutputAreas2001_area, -a_OutputAreas2001_t_area, -TAG, -area_prop, -TOTAL, -`Works mainly at or from home`, -`Less than 2km`, -`2km to less than 5km`, -`5km to less than 10km`, -`10km to less than 20km`, -`20km and over`, -`Works on an offshore installation`, -Other, -offshore.2001) %>% 
    group_by(PARCode, PARName) %>% 
    summarise_all(sum, na.rm=T) %>%
    group_by(PARCode, PARName) %>% 
-   mutate_all(round, 0)
+   mutate_all(round, 0) %>% 
+   mutate(home.2001=home.2001 / total.2001,
+          less_2km.2001=less_2km.2001 / total.2001,
+          between_2_5km.2001=between_2_5km.2001 / total.2001,
+          between_5_10km.2001=between_5_10km.2001 / total.2001,
+          between_10_20km.2001=between_10_20km.2001 / total.2001,
+          over_20km.2001=over_20km.2001 / total.2001,
+          other.2001=other.2001 / total.2001)
 
 dist2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/LC7102SC.csv",
                     skip=4, na="-") %>% 
@@ -277,23 +284,116 @@ dist2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/LC7102SC.csv",
    select(-X2) %>% 
    mutate_all(funs(replace(., is.na(.), 0)))
 
-areas2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/OutputArea2011_MHW_parishes.csv") %>% 
+dist2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/OutputArea2011_MHW_parishes.csv") %>% 
    select(census_id=a_code, PARCode=b_PARCode, PARName=b_PARName, OutputArea2011_MHW_area, a_OutputArea2011_MHW_t_area) %>% 
    mutate(area_prop=OutputArea2011_MHW_area / a_OutputArea2011_MHW_t_area) %>% 
    left_join(dist2011, by=c(census_id="X1")) %>% 
-   mutate(total_2011 = `All people aged 16 to 74 in employment` * area_prop,
-          home_2011=`Work mainly at or from home` * area_prop,
-          less_2km_2011=`Less than 2km` * area_prop,
-          between_2_5km_2011=`2km to less than 5km` * area_prop,
-          between_5_10km_2011=`5km to less than 10km` * area_prop,
-          between_10_20km_2011=`10km to less than 20km` * area_prop,
-          between_20_30km_2011=`20km to less than 30km` * area_prop,
-          over_30km_2011=`30km and over` * area_prop,
-          other_2011=`Other (2)` * area_prop) %>% 
-   mutate(over_20km_2011=between_20_30km_2011 + over_30km_2011) %>% 
-   select(-OutputArea2011_MHW_area, -a_OutputArea2011_MHW_t_area, -census_id, -area_prop, -`All people aged 16 to 74 in employment`, -`Work mainly at or from home`, -`Less than 2km`, -`2km to less than 5km`, -`5km to less than 10km`, -`10km to less than 20km`, -`20km to less than 30km`, -`30km and over`, -`Other (2)`, -between_20_30km_2011, -over_30km_2011) %>% 
+   mutate(total.2011 = `All people aged 16 to 74 in employment` * area_prop,
+          home.2011=`Work mainly at or from home` * area_prop,
+          less_2km.2011=`Less than 2km` * area_prop,
+          between_2_5km.2011=`2km to less than 5km` * area_prop,
+          between_5_10km.2011=`5km to less than 10km` * area_prop,
+          between_10_20km.2011=`10km to less than 20km` * area_prop,
+          between_20_30km.2011=`20km to less than 30km` * area_prop,
+          over_30km.2011=`30km and over` * area_prop,
+          other.2011=`Other (2)` * area_prop) %>% 
+   mutate(over_20km.2011=between_20_30km.2011 + over_30km.2011) %>% 
+   select(-OutputArea2011_MHW_area, -a_OutputArea2011_MHW_t_area, -census_id, -area_prop, -`All people aged 16 to 74 in employment`, -`Work mainly at or from home`, -`Less than 2km`, -`2km to less than 5km`, -`5km to less than 10km`, -`10km to less than 20km`, -`20km to less than 30km`, -`30km and over`, -`Other (2)`, -between_20_30km.2011, -over_30km.2011) %>% 
    group_by(PARCode, PARName) %>% 
    summarise_all(sum, na.rm=T) %>%
    group_by(PARCode, PARName) %>% 
-   mutate_all(round, 0)
+   mutate_all(round, 0) %>% 
+   mutate(home.2011=home.2011 / total.2011,
+          less_2km.2011=less_2km.2011 / total.2011,
+          between_2_5km.2011=between_2_5km.2011 / total.2011,
+          between_5_10km.2011=between_5_10km.2011 / total.2011,
+          between_10_20km.2011=between_10_20km.2011 / total.2011,
+          over_20km.2011=over_20km.2011 / total.2011,
+          other.2011=other.2011 / total.2011)
 
+parishes %>% 
+   left_join(dist2001) %>% 
+   ggplot(aes(long, lat, group=group)) +
+   geom_polygon(aes(fill=over_20km_2001)) +
+   geom_polygon(data=Scotland, aes(long, lat, group=group),
+                colour="grey30", fill=NA, size=0.1) +
+   coord_equal() +
+   scale_fill_distiller(palette="Greens", direction=1,
+                        breaks=scales::pretty_breaks(n=5),
+                        labels=scales::percent) +
+   labs(fill="People") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank(),
+         text=element_text(size=15)) +
+   parishes %>% 
+   left_join(dist2011) %>% 
+   ggplot(aes(long, lat, group=group)) +
+   geom_polygon(aes(fill=over_20km_2011)) +
+   geom_polygon(data=Scotland, aes(long, lat, group=group),
+                colour="grey30", fill=NA, size=0.1) +
+   coord_equal() +
+   scale_fill_distiller(palette="Greens", direction=1,
+                        breaks=scales::pretty_breaks(n=5),
+                        labels=scales::percent) +
+   labs(fill="People") +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank(),
+         text=element_text(size=15))
+
+x = dist2001 %>% 
+   left_join(dist2011) %>% 
+   mutate(middle.2001 = less_2km.2001 + between_2_5km.2001 + between_5_10km.2001 + between_10_20km.2001,
+          middle.2011 = less_2km.2011 + between_2_5km.2011 + between_5_10km.2011 + between_10_20km.2011) %>% 
+   left_join(hilliness) %>% 
+   select(-cluster2)
+
+x$quintiles=cut_number(x$score,
+              n=5,
+              labels=c("0-20%", "20-40%", "40-60%", "60-80%", "80-100%"))
+   
+x %>% 
+   ungroup() %>% 
+   select(PARCode,
+          home.2001, home.2011,
+          middle.2001, middle.2011,
+          over_20km.2001, over_20km.2011,
+          other.2001, other.2011,
+          quintiles) %>% 
+   gather(distance, proportion, -PARCode, -quintiles) %>% 
+   separate(distance, c("distance", "year"), sep="\\.") %>% 
+   spread(year, proportion) %>% 
+   drop_na() %>% 
+   rename(yr_2001=`2001`, yr_2011=`2011`) %>% 
+   ggplot(aes(yr_2001, yr_2011)) +
+   geom_point() +
+   geom_abline() +
+   stat_smooth() +
+   facet_grid(distance ~ quintiles)
+
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/distance_to_work.png",
+    height=1080, width=1600)
+x %>% 
+   ungroup() %>% 
+   select(PARCode,
+          home.2001, home.2011,
+          middle.2001, middle.2011,
+          over_20km.2001, over_20km.2011,
+          other.2001, other.2011,
+          score) %>% 
+   gather(distance, proportion, -PARCode, -score) %>% 
+   separate(distance, c("distance", "year"), sep="\\.") %>% 
+   drop_na() %>% 
+   ggplot(aes(score, proportion)) +
+   geom_point(size=5, alpha=0.3) +
+   stat_smooth(size=3) +
+   facet_grid(year ~ distance) +
+   scale_y_continuous(labels=scales::percent) +
+   labs(x="Hilliness score",
+        y="Percent of workers") +
+   theme_bw() +
+   theme(text=element_text(size=25))
+dev.off()
