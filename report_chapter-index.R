@@ -18,6 +18,8 @@ library(viridis)
 restrictions = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/parish_restrictions.csv")
 hilliness = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/hilliness.csv")
 
+designations = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/designations.csv")
+
 parishes = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/ag_parishes_2016.gpkg"), "simplified_parishes")
 
 Scotland = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/ag_parishes_2016.gpkg"), "Scotland") %>% 
@@ -28,7 +30,8 @@ parishes = tidy(parishes) %>%
    left_join(parishes@data)
 
 parishes = parishes %>% 
-   left_join(hilliness, by=c("PARCode"="PARCode"))
+   left_join(hilliness, by=c("PARCode"="PARCode")) %>% 
+   left_join(designations, by=c("PARCode"="PARCode"))
 
 
 # ---------------------------------------------
@@ -76,3 +79,56 @@ hilliness %>%
    arrange(desc(score)) %>% 
    top_n(10, wt=score) %>% 
    xtable()
+
+
+# ---------------------------------------------
+# Designation comparison
+
+score.designation = hilliness %>% 
+   left_join(designations, by=c("PARCode"="PARCode"))
+
+plot.designation = function(i, tit, tit.x, pal){
+   ggplot(parishes, aes(long, lat, group=group)) +
+      geom_polygon(aes_string(fill=i)) +
+      geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+      coord_equal() +
+      scale_fill_distiller(palette=pal, direction=1) +
+      labs(fill=tit) +
+      theme_minimal() +
+      theme(axis.text=element_blank(),
+            axis.title=element_blank(),
+            line=element_blank(),
+            text=element_text(size=25)) +
+      ggplot(score.designation, aes_string("score", i)) +
+      geom_point(size=5, alpha=0.5) +
+      labs(x="Hilliness score",
+           y=tit.x) +
+      theme_bw() +
+      theme(text=element_text(size=25))
+}
+
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/desig_forest.png",
+    height=1080, width=1600)
+plot.designation("land_cap_forest_prop", "Constrained\nforestry\nproportion", "Constrained forestry proportion", "BuGn")
+dev.off()
+
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/desig_wildland.png",
+    height=1080, width=1600)
+plot.designation("wildland_prop", "Wildland\nproportion", "Wildland proportion", "GnBu")
+dev.off()
+
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/desig_rural.png",
+    height=1080, width=1600)
+plot.designation("rural_prop", "Rural\nproportion", "Rural proportion", "PuBuGn")
+dev.off()
+
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/desig_NNR.png",
+    height=1080, width=1600)
+plot.designation("NNR_prop", "National\nNature\nReserve\nproportion", "National Nature Reserve proportion", "YlOrRd")
+dev.off()
+
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/desig_SPA.png",
+    height=1080, width=1600)
+plot.designation("SPA_prop", "Special\nProtection\nArea\nproportion", "Special Protection Area proportion", "YlGnBu")
+dev.off()
