@@ -66,7 +66,7 @@ trans_neg = trans_new(name="trans_neg",
                       transform=log_with_neg,
                       inverse=exp_with_neg)
 
-plot.census = function(dat, i01, i11, tit, tit.x, pal){
+plot.census = function(dat, i01, i11, tit, tit.x, pal, down=-0.5, up=0.5){
    x = dat %>% 
       rename_(i01=i01, i11=i11) %>% 
       mutate(perc_diff = ((i11 +1) / (i01 +1)) -1) %>% 
@@ -83,7 +83,7 @@ plot.census = function(dat, i01, i11, tit, tit.x, pal){
          scale_fill_distiller(palette=pal, direction=1,
                               breaks=scales::pretty_breaks(n=5),
                               labels=scales::percent,
-                              limits=c(-0.5, 0.5)) +
+                              limits=c(down, up)) +
          labs(fill=tit) +
          theme_minimal() +
          theme(axis.text=element_blank(),
@@ -108,7 +108,7 @@ plot.census = function(dat, i01, i11, tit, tit.x, pal){
          scale_fill_distiller(palette=pal, direction=1,
                               breaks=scales::pretty_breaks(n=5),
                               labels=scales::percent,
-                              limits=c(-0.5, 0.5)) +
+                              limits=c(down, up)) +
          labs(fill=tit) +
          theme_minimal() +
          theme(axis.text=element_blank(),
@@ -178,7 +178,9 @@ temp = hilliness_pop %>%
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/employment_land_prop.png",
     height=1080, width=1600)
 plot.census(temp, "pop2001", "pop2011",
-            "Proportion\nworking\non land\nchange", "Proportion working on land change", "PRGn")
+            "Proportion\nworking\non land\nchange",
+            "Proportion working on land change", "PRGn",
+            down=-0.15, up=0.15)
 dev.off()
 
 
