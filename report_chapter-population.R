@@ -69,21 +69,23 @@ trans_neg = trans_new(name="trans_neg",
 plot.census = function(dat, i01, i11, tit, tit.x, pal, down=-0.5, up=0.5){
    x = dat %>% 
       rename_(i01=i01, i11=i11) %>% 
-      mutate(perc_diff = ((i11 +1) / (i01 +1)) -1) %>% 
-      select(PARCode, score, i01, i11, perc_diff)
+      mutate(perc_diff = ((i11 +1) / (i01 +1)) -1,
+             perc_diff_map = perc_diff,
+             perc_diff_map = replace(perc_diff_map, perc_diff_map<down, down),
+             perc_diff_map = replace(perc_diff_map, perc_diff_map>up, up)) %>% 
+      select(PARCode, score, i01, i11, perc_diff, perc_diff_map)
    
    if (max(x$perc_diff, na.rm=T)<3){
       parishes %>% 
          left_join(x) %>% 
          ggplot(aes(long, lat, group=group)) +
-         geom_polygon(aes(fill=perc_diff)) +
+         geom_polygon(aes(fill=perc_diff_map)) +
          geom_polygon(data=Scotland, aes(long, lat, group=group),
                       colour="grey30", fill=NA, size=0.1) +
          coord_equal() +
          scale_fill_distiller(palette=pal, direction=1,
                               breaks=scales::pretty_breaks(n=5),
-                              labels=scales::percent,
-                              limits=c(down, up)) +
+                              labels=scales::percent) +
          labs(fill=tit) +
          theme_minimal() +
          theme(axis.text=element_blank(),
@@ -101,7 +103,7 @@ plot.census = function(dat, i01, i11, tit, tit.x, pal, down=-0.5, up=0.5){
       parishes %>% 
          left_join(x) %>% 
          ggplot(aes(long, lat, group=group)) +
-         geom_polygon(aes(fill=perc_diff)) +
+         geom_polygon(aes(fill=perc_diff_map)) +
          geom_polygon(data=Scotland, aes(long, lat, group=group),
                       colour="grey30", fill=NA, size=0.1) +
          coord_equal() +
