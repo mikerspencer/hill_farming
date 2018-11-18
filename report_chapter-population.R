@@ -118,7 +118,6 @@ plot.census = function(dat, i01, i11, tit, tit.x, pal, down=-0.5, up=0.5){
          ggplot(x, aes(score, perc_diff)) +
          geom_point(size=5, alpha=0.3) +
          scale_y_continuous(labels=scales::percent) +
-         coord_trans(y=trans_neg) +
          labs(x="Hilliness score",
               y=tit.x) +
          theme_bw() +
@@ -211,3 +210,66 @@ lapply(colnames(ag_census_2000)[2:10], function(i){
    )
    dev.off()
 })
+
+
+# ---------------------------------------------
+# Ag census cumsum
+
+temp = hilliness %>% 
+   left_join(ag_census_2000, by=c(PARCode="PARCode")) %>% 
+   left_join(ag_census_2011, by=c(PARCode="PARCode")) %>% 
+   gather(key, value, -PARCode, -cluster2, -score) %>%
+   separate(key, into=c("question", "year"), sep="\\.") %>% 
+   mutate(year=replace(year, year=="x", 2001),
+          year=replace(year, year=="y", 2011))
+   
+#cum sum
+temp %>% 
+   filter(question=="ITEM177") %>% 
+   drop_na() %>%
+   group_by(year) %>% 
+   arrange(score) %>% 
+   mutate(cum = cumsum(value)) %>% 
+ggplot(aes(score, cum, colour=year)) +
+   geom_line()
+
+#scatter
+temp %>% 
+   filter(question=="ITEM177") %>% 
+   spread(year, value) %>% 
+   ggplot(aes(`2001`, `2011`, colour=score)) + 
+   geom_point() + 
+   geom_abline()
+
+
+# ---------------------------------------------
+# Distance to work
+
+dist2001 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/CAS225.csv",
+                    skip=4, na="-") %>% 
+   filter(X2=="ALL CLASSES OF NS-SeC") %>% 
+   select(-X2) %>% 
+   mutate_all(funs(replace(., is.na(.), 0)))
+
+areas2001 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/OutputAreas2001_parishes.csv") %>% 
+   select(TAG=a_TAG, PARCode=b_PARCode, PARName=b_PARName, OutputAreas2001_area, a_OutputAreas2001_t_area) %>% 
+   mutate(area_prop=OutputAreas2001_area / a_OutputAreas2001_t_area) %>% 
+   left_join(dist2001, by=c(TAG="X1")) %>% 
+   mutate(total = TOTAL * area_prop,
+          home_2001=`Works mainly at or from home` * area_prop,
+          less_2km_2001=`Less than 2km` * area_prop,
+          between_2_5km_2001=`2km to less than 5km` * area_prop,
+          between_5_10km_2001=`5km to less than 10km` * area_prop,
+          between_10_20km_2001=`10km to less than 20km` * area_prop,
+          over_20km_2001=`20km and over` * area_prop,
+          offshore_2001=`Works on an offshore installation` * area_prop,
+          other_2001=Other * area_prop) %>% 
+   select(-OutputAreas2001_area, -a_OutputAreas2001_t_area, -TAG, -area_prop, -TOTAL, -`Works mainly at or from home`, -`Less than 2km`, -`2km to less than 5km`, -`5km to less than 10km`, -`10km to less than 20km`, -`20km and over`, -`Works on an offshore installation`, -Other) %>% 
+   group_by(PARCode, PARName) %>% 
+   summarise_all(sum, na.rm=T) %>%
+   group_by(PARCode, PARName) %>% 
+   mutate_all(round, 0)
+
+dist2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/LC7102SC.csv",
+                    skip=4)
+
