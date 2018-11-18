@@ -16,7 +16,9 @@ library(viridis)
 # Data
 
 restrictions = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/spatial-processed/parish_restrictions.csv")
-hilliness = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/hilliness.csv")
+hilliness = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/hilliness.csv") %>% 
+   mutate(rank = cut_number(score, n=5,
+                            labels=c("0-20%", "20-40%", "40-60%", "60-80%", "80-100%")))
 
 designations = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/designations.csv")
 
@@ -36,10 +38,6 @@ parishes = parishes %>%
 
 # ---------------------------------------------
 # Score and rank
-
-parishes$rank = cut_number(parishes$score,
-                    n=5,
-                    labels=c("0-20%", "20-40%", "40-60%", "60-80%", "80-100%"))
 
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/score-rank.png",
     height=1080, width=1600)
