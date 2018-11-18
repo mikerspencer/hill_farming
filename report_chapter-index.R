@@ -37,8 +37,8 @@ parishes = parishes %>%
 # ---------------------------------------------
 # Score and rank
 
-parishes$rank = cut(parishes$score,
-                    breaks=5,
+parishes$rank = cut_number(parishes$score,
+                    n=5,
                     labels=c("0-20%", "20-40%", "40-60%", "60-80%", "80-100%"))
 
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/score-rank.png",
