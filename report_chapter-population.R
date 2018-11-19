@@ -26,9 +26,7 @@ Scotland = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/da
    tidy()
 
 ag_census_2000 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/ag_census_2000.csv") %>% 
-   rename(PARCode=PARISH) %>% 
-   192 + 194
-193+195
+   rename(PARCode=PARISH)
 ag_census_2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/ag_census_2011.csv") %>% 
    rename(PARCode=PARISH)
 census = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/pop_census.csv")
@@ -331,21 +329,19 @@ plot.census.map(temp, "ITEM182.x", "ITEM182.y", "ITEM182", "PuOr") +
    plot_layout(ncol=3, nrow=2, heights = c(3, 1))
 dev.off()
 
-png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/worker_spouse.png",
+# employees
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/worker_employee.png",
     height=800, width=1600)
-plot.census.map(temp, "ITEM182.x", "ITEM182.y", "ITEM182", "PuOr") +
-   plot.census.map(temp, "ITEM183.x", "ITEM183.y", "ITEM183", "PuOr") +
-   plot.census.map(temp, "ITEM184.x", "ITEM184.y", "ITEM184", "PuOr") +
-   plot.census.cum(temp.cum, "ITEM182", "Farms") +
-   plot.census.cum(temp.cum, "ITEM183", "Farms") +
-   plot.census.cum(temp.cum, "ITEM184", "Farms") +
+plot.census.map(temp, "full_time.x", "full_time.y", "Full time", "RdBu") +
+   plot.census.map(temp, "part_time.x", "part_time.y", "Part time", "RdBu") +
+   plot.census.map(temp, "casual.x", "casual.y", "Casual", "RdBu") +
+   plot.census.cum(temp.cum, "ITEM182", "Employees") +
+   plot.census.cum(temp.cum, "ITEM183", "Employees") +
+   plot.census.cum(temp.cum, "ITEM184", "Employees") +
    plot_layout(ncol=3, nrow=2, heights = c(3, 1))
 dev.off()
 
-# employees?
-
-
-
+# animals
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/output_cattle_sheep.png",
     height=1080, width=1600)
 plot.census.map(temp, "ITEM122.x", "ITEM122.y", "ITEM122", "BrBG") +
