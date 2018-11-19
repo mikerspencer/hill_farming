@@ -164,7 +164,6 @@ plot.census.cum = function(dat.cum, ag, tit.cum){
       group_by(year) %>% 
       arrange(score) %>% 
       mutate(cum = cumsum(value)) %>% 
-      filter(score<1) %>% 
       ggplot(aes(score, cum, colour=year)) +
       geom_line(size=2) +
       labs(x="Hilliness score",
@@ -269,7 +268,7 @@ temp.cum = hilliness %>%
    left_join(ag_census_2011, by=c(PARCode="PARCode")) %>% 
    gather(key, value, -PARCode, -cluster2, -score) %>%
    separate(key, into=c("question", "year"), sep="\\.") %>% 
-   mutate(year=replace(year, year=="x", 2001),
+   mutate(year=replace(year, year=="x", 2000),
           year=replace(year, year=="y", 2011))
 
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/worker_owner.png",
@@ -283,6 +282,39 @@ plot.census.map(temp, "ITEM177.x", "ITEM177.y", "ITEM177", "RdYlGn") +
    plot_layout(ncol=3, nrow=2, heights = c(3, 1))
 dev.off()
 
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/worker_spouse.png",
+    height=800, width=1600)
+plot.census.map(temp, "ITEM182.x", "ITEM182.y", "ITEM182", "PuOr") +
+   plot.census.map(temp, "ITEM183.x", "ITEM183.y", "ITEM183", "PuOr") +
+   plot.census.map(temp, "ITEM184.x", "ITEM184.y", "ITEM184", "PuOr") +
+   plot.census.cum(temp.cum, "ITEM182", "Farms") +
+   plot.census.cum(temp.cum, "ITEM183", "Farms") +
+   plot.census.cum(temp.cum, "ITEM184", "Farms") +
+   plot_layout(ncol=3, nrow=2, heights = c(3, 1))
+dev.off()
+
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/worker_spouse.png",
+    height=800, width=1600)
+plot.census.map(temp, "ITEM182.x", "ITEM182.y", "ITEM182", "PuOr") +
+   plot.census.map(temp, "ITEM183.x", "ITEM183.y", "ITEM183", "PuOr") +
+   plot.census.map(temp, "ITEM184.x", "ITEM184.y", "ITEM184", "PuOr") +
+   plot.census.cum(temp.cum, "ITEM182", "Farms") +
+   plot.census.cum(temp.cum, "ITEM183", "Farms") +
+   plot.census.cum(temp.cum, "ITEM184", "Farms") +
+   plot_layout(ncol=3, nrow=2, heights = c(3, 1))
+dev.off()
+
+
+
+
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/output_cattle_sheep.png",
+    height=1080, width=1600)
+plot.census.map(temp, "ITEM122.x", "ITEM122.y", "ITEM122", "BrBG") +
+   plot.census.map(temp, "ITEM145.x", "ITEM145.y", "ITEM145", "BrBG") +
+   plot.census.cum(temp.cum, "ITEM122", "Cattle") +
+   plot.census.cum(temp.cum, "ITEM145", "Sheep") +
+   plot_layout(ncol=2, nrow=2, heights = c(3, 1))
+dev.off()
 
 # ---------------------------------------------
 # Distance to work
