@@ -91,14 +91,15 @@ plot.census = function(dat, i01, i11, tit, tit.x, pal, down=-0.5, up=0.5){
          theme(axis.text=element_blank(),
                axis.title=element_blank(),
                line=element_blank(),
-               text=element_text(size=25)) +
+               text=element_text(size=30),
+               legend.key.height=unit(3.5, "line")) +
          ggplot(x, aes(score, perc_diff)) +
          geom_point(size=5, alpha=0.3) +
          scale_y_continuous(labels=scales::percent) +
          labs(x="Hilliness score",
               y=tit.x) +
          theme_bw() +
-         theme(text=element_text(size=25))
+         theme(text=element_text(size=30))
    } else {
       parishes %>% 
          left_join(x) %>% 
@@ -116,14 +117,15 @@ plot.census = function(dat, i01, i11, tit, tit.x, pal, down=-0.5, up=0.5){
          theme(axis.text=element_blank(),
                axis.title=element_blank(),
                line=element_blank(),
-               text=element_text(size=25)) +
+               text=element_text(size=30),
+               legend.key.height=unit(3.5, "line")) +
          ggplot(x, aes(score, perc_diff)) +
          geom_point(size=5, alpha=0.3) +
          scale_y_continuous(labels=scales::percent) +
          labs(x="Hilliness score",
               y=tit.x) +
          theme_bw() +
-         theme(text=element_text(size=25))
+         theme(text=element_text(size=30))
    }
 }
 
