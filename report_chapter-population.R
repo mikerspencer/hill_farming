@@ -17,6 +17,8 @@ library(scales)
 # Data
 
 hilliness = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/hilliness.csv")
+hilliness$quintiles=cut_number(hilliness$score, n=5,
+                               labels=c("0-20%", "20-40%", "40-60%", "60-80%", "80-100%"))
 
 parishes = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/data/spatial/ag_parishes_2016.gpkg"), "simplified_parishes")
 
@@ -183,6 +185,12 @@ plot.census(hilliness_pop, "pop_all_2001", "pop_all_2011",
             "Population\nchange", "Population change", "PiYG")
 dev.off()
 
+sum(census$pop_all_2001)
+sum(census$pop_all_2011)
+100 * sum(census$pop_all_2011) / sum(census$pop_all_2001)
+
+
+
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/population_male.png",
     height=1080, width=1600)
 plot.census(hilliness_pop, "pop_male_2001", "pop_male_2011",
@@ -304,7 +312,7 @@ plot.census.map(temp, "ITEM182.x", "ITEM182.y", "ITEM182", "PuOr") +
    plot_layout(ncol=3, nrow=2, heights = c(3, 1))
 dev.off()
 
-
+# employees?
 
 
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/output_cattle_sheep.png",
@@ -424,10 +432,6 @@ x = dist2001 %>%
           middle.2011 = less_2km.2011 + between_2_5km.2011 + between_5_10km.2011 + between_10_20km.2011) %>% 
    left_join(hilliness) %>% 
    select(-cluster2)
-
-x$quintiles=cut_number(x$score,
-              n=5,
-              labels=c("0-20%", "20-40%", "40-60%", "60-80%", "80-100%"))
    
 x %>% 
    ungroup() %>% 
