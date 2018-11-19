@@ -335,9 +335,9 @@ png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/worker_employee.png",
 plot.census.map(temp, "full_time.x", "full_time.y", "Full time", "RdBu") +
    plot.census.map(temp, "part_time.x", "part_time.y", "Part time", "RdBu") +
    plot.census.map(temp, "casual.x", "casual.y", "Casual", "RdBu") +
-   plot.census.cum(temp.cum, "ITEM182", "Employees") +
-   plot.census.cum(temp.cum, "ITEM183", "Employees") +
-   plot.census.cum(temp.cum, "ITEM184", "Employees") +
+   plot.census.cum(temp.cum, "full_time", "Employees") +
+   plot.census.cum(temp.cum, "part_time", "Employees") +
+   plot.census.cum(temp.cum, "casual", "Employees") +
    plot_layout(ncol=3, nrow=2, heights = c(3, 1))
 dev.off()
 
