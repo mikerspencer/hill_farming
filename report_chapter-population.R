@@ -129,6 +129,51 @@ plot.census = function(dat, i01, i11, tit, tit.x, pal, down=-0.5, up=0.5){
    }
 }
 
+plot.census.map = function(dat, i01, i11, tit, pal, down=-0.5, up=0.5){
+   x = dat %>% 
+      rename_(i01=i01, i11=i11) %>% 
+      mutate(perc_diff = ((i11 +1) / (i01 +1)) -1,
+             perc_diff_map = perc_diff,
+             perc_diff_map = replace(perc_diff_map, perc_diff_map<down, down),
+             perc_diff_map = replace(perc_diff_map, perc_diff_map>up, up)) %>% 
+      select(PARCode, score, i01, i11, perc_diff, perc_diff_map)
+   
+   parishes %>% 
+      left_join(x) %>% 
+      ggplot(aes(long, lat, group=group)) +
+      geom_polygon(aes(fill=perc_diff_map)) +
+      geom_polygon(data=Scotland, aes(long, lat, group=group),
+                   colour="grey30", fill=NA, size=0.1) +
+      coord_equal() +
+      scale_fill_distiller(palette=pal, direction=1,
+                           breaks=scales::pretty_breaks(n=5),
+                           labels=scales::percent) +
+      labs(fill=tit) +
+      theme_minimal() +
+      theme(axis.text=element_blank(),
+            axis.title=element_blank(),
+            line=element_blank(),
+            text=element_text(size=30),
+            legend.key.height=unit(3.5, "line"))
+}
+
+plot.census.cum = function(dat.cum, ag, tit.cum){
+   dat.cum %>% 
+      filter(question==ag) %>% 
+      drop_na() %>%
+      group_by(year) %>% 
+      arrange(score) %>% 
+      mutate(cum = cumsum(value)) %>% 
+      filter(score<1) %>% 
+      ggplot(aes(score, cum, colour=year)) +
+      geom_line(size=2) +
+      labs(x="Hilliness score",
+           y=tit.cum,
+           colour="") +
+      theme_bw() +
+      theme(text=element_text(size=30))
+}
+
 
 # ---------------------------------------------
 # Population
@@ -219,31 +264,24 @@ lapply(colnames(ag_census_2000)[2:10], function(i){
 # ---------------------------------------------
 # Ag census cumsum
 
-temp = hilliness %>% 
+temp.cum = hilliness %>% 
    left_join(ag_census_2000, by=c(PARCode="PARCode")) %>% 
    left_join(ag_census_2011, by=c(PARCode="PARCode")) %>% 
    gather(key, value, -PARCode, -cluster2, -score) %>%
    separate(key, into=c("question", "year"), sep="\\.") %>% 
    mutate(year=replace(year, year=="x", 2001),
           year=replace(year, year=="y", 2011))
-   
-#cum sum
-temp %>% 
-   filter(question=="ITEM177") %>% 
-   drop_na() %>%
-   group_by(year) %>% 
-   arrange(score) %>% 
-   mutate(cum = cumsum(value)) %>% 
-ggplot(aes(score, cum, colour=year)) +
-   geom_line()
 
-#scatter
-temp %>% 
-   filter(question=="ITEM177") %>% 
-   spread(year, value) %>% 
-   ggplot(aes(`2001`, `2011`, colour=score)) + 
-   geom_point() + 
-   geom_abline()
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/worker_owner.png",
+    height=800, width=1600)
+plot.census.map(temp, "ITEM177.x", "ITEM177.y", "ITEM177", "RdYlGn") +
+   plot.census.map(temp, "ITEM178.x", "ITEM178.y", "ITEM178", "RdYlGn") +
+   plot.census.map(temp, "ITEM179.x", "ITEM179.y", "ITEM179", "RdYlGn") +
+   plot.census.cum(temp.cum, "ITEM177", "Farms") +
+   plot.census.cum(temp.cum, "ITEM178", "Farms") +
+   plot.census.cum(temp.cum, "ITEM179", "Farms") +
+   plot_layout(ncol=3, nrow=2, heights = c(3, 1))
+dev.off()
 
 
 # ---------------------------------------------
@@ -399,5 +437,5 @@ x %>%
    labs(x="Hilliness score",
         y="Percent of workers") +
    theme_bw() +
-   theme(text=element_text(size=25))
+   theme(text=element_text(size=30))
 dev.off()
