@@ -26,7 +26,9 @@ Scotland = readOGR(paste0(normalizePath("~"), "/Cloud/Michael/SRUC/hill_farms/da
    tidy()
 
 ag_census_2000 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/ag_census_2000.csv") %>% 
-   rename(PARCode=PARISH)
+   rename(PARCode=PARISH) %>% 
+   192 + 194
+193+195
 ag_census_2011 = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/ag_census_2011.csv") %>% 
    rename(PARCode=PARISH)
 census = read_csv("~/Cloud/Michael/SRUC/hill_farms/data/census/pop_census.csv")
@@ -189,7 +191,9 @@ sum(census$pop_all_2001)
 sum(census$pop_all_2011)
 100 * sum(census$pop_all_2011) / sum(census$pop_all_2001)
 
-
+sum(hilliness_pop$pop_all_2001[hilliness_pop$quintiles=="80-100%"])
+sum(hilliness_pop$pop_all_2011[hilliness_pop$quintiles=="80-100%"])
+100 * sum(hilliness_pop$pop_all_2011[hilliness_pop$quintiles=="80-100%"]) / sum(hilliness_pop$pop_all_2001[hilliness_pop$quintiles=="80-100%"])
 
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/population_male.png",
     height=1080, width=1600)
@@ -213,11 +217,28 @@ plot.census(hilliness_pop, "pop_working_all_2001", "pop_working_all_2011",
             "Working\npopulation\nchange", "Working population change", "PRGn")
 dev.off()
 
+sum(census$pop_working_all_2001)
+sum(census$pop_working_all_2011)
+100 * sum(census$pop_working_all_2011) / sum(census$pop_working_all_2001)
+
+sum(hilliness_pop$pop_working_all_2001[hilliness_pop$quintiles=="80-100%"])
+sum(hilliness_pop$pop_working_all_2011[hilliness_pop$quintiles=="80-100%"])
+100 * sum(hilliness_pop$pop_working_all_2011[hilliness_pop$quintiles=="80-100%"]) / sum(hilliness_pop$pop_working_all_2001[hilliness_pop$quintiles=="80-100%"])
+
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/employment_land.png",
     height=1080, width=1600)
 plot.census(hilliness_pop, "pop_working_land_2001", "pop_working_land_2011",
             "Working\nland\npopulation\nchange", "Working land population change", "PRGn")
 dev.off()
+
+sum(census$pop_working_land_2001)
+sum(census$pop_working_land_2011)
+100 * sum(census$pop_working_land_2011) / sum(census$pop_working_land_2001)
+
+sum(hilliness_pop$pop_working_land_2001[hilliness_pop$quintiles=="80-100%"])
+sum(hilliness_pop$pop_working_land_2011[hilliness_pop$quintiles=="80-100%"])
+100 * sum(hilliness_pop$pop_working_land_2011[hilliness_pop$quintiles=="80-100%"]) / sum(hilliness_pop$pop_working_land_2001[hilliness_pop$quintiles=="80-100%"])
+
 
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/employment_service.png",
     height=1080, width=1600)
@@ -225,8 +246,17 @@ plot.census(hilliness_pop, "pop_working_service_2001", "pop_working_service_2011
             "Working\nservice\npopulation\nchange", "Working service population change", "PRGn")
 dev.off()
 
+sum(census$pop_working_service_2001)
+sum(census$pop_working_service_2011)
+100 * sum(census$pop_working_service_2011) / sum(census$pop_working_service_2001)
+
+sum(hilliness_pop$pop_working_service_2001[hilliness_pop$quintiles=="80-100%"])
+sum(hilliness_pop$pop_working_service_2011[hilliness_pop$quintiles=="80-100%"])
+100 * sum(hilliness_pop$pop_working_service_2011[hilliness_pop$quintiles=="80-100%"]) / sum(hilliness_pop$pop_working_service_2001[hilliness_pop$quintiles=="80-100%"])
+
+
 temp = hilliness_pop %>% 
-   transmute(PARCode, score,
+   transmute(PARCode, score, quintiles,
              pop2001 = pop_working_land_2001 / (pop_working_all_2001 - pop_working_service_2001),
           pop2011 = pop_working_land_2011 / (pop_working_all_2011 - pop_working_service_2011))
 
@@ -274,7 +304,7 @@ lapply(colnames(ag_census_2000)[2:10], function(i){
 temp.cum = hilliness %>% 
    left_join(ag_census_2000, by=c(PARCode="PARCode")) %>% 
    left_join(ag_census_2011, by=c(PARCode="PARCode")) %>% 
-   gather(key, value, -PARCode, -cluster2, -score) %>%
+   gather(key, value, -PARCode, -cluster2, -score, -quintiles) %>%
    separate(key, into=c("question", "year"), sep="\\.") %>% 
    mutate(year=replace(year, year=="x", 2000),
           year=replace(year, year=="y", 2011))
@@ -313,6 +343,7 @@ plot.census.map(temp, "ITEM182.x", "ITEM182.y", "ITEM182", "PuOr") +
 dev.off()
 
 # employees?
+
 
 
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/output_cattle_sheep.png",
