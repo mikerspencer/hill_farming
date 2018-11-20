@@ -172,7 +172,29 @@ plot.census.cum = function(dat.cum, ag, tit.cum){
            y=tit.cum,
            colour="") +
       theme_bw() +
-      theme(text=element_text(size=30))
+      theme(text=element_text(size=25))
+}
+
+plot.bars = function(dat, dat.col, tit){
+   dat %>% 
+      rename_(col_early=paste0(dat.col, ".x"),
+             col_late=paste0(dat.col, ".y")) %>% 
+      select(PARCode, score, col_early, col_late) %>% 
+      mutate(score.gp = cut(score, breaks=seq(0, 5, by=0.5),
+                            labels=c("0-0.5", "0.5-1", "1-1.5", "1.5-2",
+                                     "2-2.5", "2.5-3", "3-3.5", "3.5-4",
+                                     "4-4.5", "4.5-5"))) %>% 
+      drop_na() %>% 
+      group_by(score.gp) %>% 
+      summarise(col_early = sum(col_early),
+                col_late = sum(col_late)) %>% 
+      mutate(val = (col_late - col_early) / col_early) %>% 
+      ggplot(aes(score.gp, val)) +
+      geom_col(fill=rgb(150/255, 0, 81/255)) +
+      labs(x="Hilliness score",
+           y=tit) +
+      theme_bw() +
+      theme(text=element_text(size=25))
 }
 
 
@@ -318,6 +340,25 @@ plot.census.map(temp, "ITEM177.x", "ITEM177.y", "ITEM177", "RdYlGn") +
    plot_layout(ncol=3, nrow=2, heights = c(3, 1))
 dev.off()
 
+# score of 3.5-4
+png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/hilliness_3_5_4.png",
+    height=1080, width=800)
+parishes %>% 
+   left_join(temp) %>% 
+   filter(score>3.5 & score<4) %>% 
+   ggplot(aes(long, lat, group=group)) +
+   geom_polygon(fill=rgb(150/255, 0, 81/255)) +
+   geom_polygon(data=parishes, aes(long, lat, group=group),
+                colour="grey30", fill=NA, size=0.1) +
+   geom_polygon(data=Scotland, aes(long, lat, group=group),
+                colour="black", fill=NA, size=0.2) +
+   coord_equal() +
+   theme_minimal() +
+   theme(axis.text=element_blank(),
+         axis.title=element_blank(),
+         line=element_blank())
+dev.off()
+
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/worker_spouse.png",
     height=800, width=1600)
 plot.census.map(temp, "ITEM182.x", "ITEM182.y", "ITEM182", "PuOr") +
@@ -343,13 +384,16 @@ dev.off()
 
 # animals
 png("~/Cloud/Michael/SRUC/hill_farms/report/Figures/output_cattle_sheep.png",
-    height=1080, width=1600)
+    height=1200, width=1600)
 plot.census.map(temp, "ITEM122.x", "ITEM122.y", "ITEM122", "BrBG") +
    plot.census.map(temp, "ITEM145.x", "ITEM145.y", "ITEM145", "BrBG") +
    plot.census.cum(temp.cum, "ITEM122", "Cattle") +
    plot.census.cum(temp.cum, "ITEM145", "Sheep") +
-   plot_layout(ncol=2, nrow=2, heights = c(3, 1))
+   plot.bars(temp, "ITEM122", "Cattle % reduction") +
+   plot.bars(temp, "ITEM145", "Sheep % reduction") +
+   plot_layout(ncol=2, nrow=3, heights = c(3, 1, 1))
 dev.off()
+
 
 # ---------------------------------------------
 # Distance to work
