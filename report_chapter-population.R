@@ -394,6 +394,24 @@ plot.census.map(temp, "ITEM122.x", "ITEM122.y", "ITEM122", "BrBG") +
    plot_layout(ncol=2, nrow=3, heights = c(3, 1, 1))
 dev.off()
 
+x= dat %>% 
+   rename_(col_early=paste0(dat.col, ".x"),
+           col_late=paste0(dat.col, ".y")) %>% 
+   select(PARCode, score, col_early, col_late) %>% 
+   mutate(score.gp = cut(score, breaks=0:5)) %>% 
+   drop_na() %>% 
+   group_by(score.gp) %>% 
+   summarise(col_early = sum(col_early),
+             col_late = sum(col_late)) %>% 
+   mutate(val = (col_late - col_early) / col_early)
+
+x[4, 2]/sum(x$col_early)
+x[4, 3]/sum(x$col_late)
+x[5, 2]/sum(x$col_early)
+x[5, 3]/sum(x$col_late)
+
+(x[2, 3] + x[3, 3]) / sum(x$col_late)
+(x[2, 2] + x[3, 2]) / sum(x$col_early)
 
 # ---------------------------------------------
 # Distance to work
