@@ -191,6 +191,7 @@ plot.bars = function(dat, dat.col, tit){
       mutate(val = (col_late - col_early) / col_early) %>% 
       ggplot(aes(score.gp, val)) +
       geom_col(fill=rgb(150/255, 0, 81/255)) +
+      scale_y_continuous(labels=scales::percent) +
       labs(x="Hilliness score",
            y=tit) +
       theme_bw() +
@@ -394,24 +395,36 @@ plot.census.map(temp, "ITEM122.x", "ITEM122.y", "ITEM122", "BrBG") +
    plot_layout(ncol=2, nrow=3, heights = c(3, 1, 1))
 dev.off()
 
-x= dat %>% 
-   rename_(col_early=paste0(dat.col, ".x"),
-           col_late=paste0(dat.col, ".y")) %>% 
-   select(PARCode, score, col_early, col_late) %>% 
+x = temp %>% 
+   rename(cattle_early=ITEM122.x,
+           cattle_late=ITEM122.y,
+           sheep_early=ITEM145.x,
+           sheep_late=ITEM145.y) %>% 
+   select(PARCode, score, cattle_early, cattle_late, sheep_early, sheep_late) %>% 
    mutate(score.gp = cut(score, breaks=0:5)) %>% 
    drop_na() %>% 
    group_by(score.gp) %>% 
-   summarise(col_early = sum(col_early),
-             col_late = sum(col_late)) %>% 
-   mutate(val = (col_late - col_early) / col_early)
+   summarise(cattle_early = sum(cattle_early),
+             cattle_late = sum(cattle_late),
+             sheep_early = sum(sheep_early),
+             sheep_late = sum(sheep_late))
 
-x[4, 2]/sum(x$col_early)
-x[4, 3]/sum(x$col_late)
-x[5, 2]/sum(x$col_early)
-x[5, 3]/sum(x$col_late)
+x[4, 2]/sum(x$cattle_early)
+x[4, 3]/sum(x$cattle_late)
+x[5, 2]/sum(x$cattle_early)
+x[5, 3]/sum(x$cattle_late)
 
-(x[2, 3] + x[3, 3]) / sum(x$col_late)
-(x[2, 2] + x[3, 2]) / sum(x$col_early)
+(x[2, 3] + x[3, 3]) / sum(x$cattle_late)
+(x[2, 2] + x[3, 2]) / sum(x$cattle_early)
+
+x[4, 2]/sum(x$sheep_early)
+x[4, 3]/sum(x$sheep_late)
+x[5, 2]/sum(x$sheep_early)
+x[5, 3]/sum(x$sheep_late)
+
+(x[2, 3] + x[3, 3]) / sum(x$sheep_late)
+(x[2, 2] + x[3, 2]) / sum(x$sheep_early)
+
 
 # ---------------------------------------------
 # Distance to work
