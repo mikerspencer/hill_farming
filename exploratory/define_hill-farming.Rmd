@@ -497,8 +497,9 @@ parishes %>%
 
 ```{r export}
 restrictions %>% 
-   select(PARCode, cluster2) %>% 
+   select(PARCode, PARName) %>% 
    left_join(score) %>% 
+   mutate(score=round(score, 3)) %>% 
    write_csv("~/Cloud/Michael/SRUC/hill_farms/data/hilliness.csv")
 ```
 
