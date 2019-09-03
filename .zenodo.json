@@ -1,0 +1,30 @@
+{
+    "description": "<p>Code to accompany hill farming impact report commissioned by RESAS (Scottish Government).</p>\n\n<p>Largely written in R, but spatial wrangling uses GRASS.</p>\n\n<p>Output data of hilliness scores is found at: https://doi.org/10.5281/zenodo.1969665</p>", 
+    "license": "GPL-3.0", 
+    "title": "Hill farming study - analysis code", 
+    "keywords": [
+        "R", 
+        "Spatial", 
+        "GRASS", 
+        "Census", 
+        "Employment", 
+        "Farming", 
+        "Scotland", 
+        "Environment", 
+        "Hill"
+    ], 
+    "upload_type": "software", 
+    "communities": [
+        {
+            "identifier": "sruc-lees"
+        }
+    ], 
+    "creators": [
+        {
+            "orcid": "0000-0003-1472-2082", 
+            "affiliation": "SRUC", 
+            "name": "Michael Spencer"
+        }
+    ], 
+    "access_right": "open"
+}
